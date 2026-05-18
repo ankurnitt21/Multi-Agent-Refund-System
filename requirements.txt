@@ -12,6 +12,7 @@ alembic>=1.14
 pinecone-client>=5.0,<6.0
 langchain-pinecone>=0.2,<1.0
 redis>=5.0
+aiokafka>=0.11,<1.0
 opentelemetry-sdk>=1.28
 opentelemetry-exporter-otlp-proto-http>=1.28
 langsmith>=0.1

@@ -10,7 +10,7 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import structlog
-from fastapi import FastAPI, BackgroundTasks, Header
+from fastapi import FastAPI, Header
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
@@ -23,7 +23,7 @@ from prompts.registry import PromptRegistry
 from vectordb.pinecone_store import PineconeStore
 from tools.policy_tools import set_pinecone_store
 from workflow.graph import run_workflow, init_checkpointer
-from task_queue_store.task_queue import PersistentTaskQueue
+from task_queue_store.kafka_events import KafkaRefundEventBus
 from logging_config import setup_logging
 from guardrails.input_sanitizer import sanitize_input, PromptInjectionError
 from guardrails.runner import RefundGuardRunner
@@ -35,7 +35,7 @@ logger = structlog.get_logger(__name__)
 app = FastAPI(title="Warehouse Refund Processing System", version="1.0.0")
 redis = Redis.from_url(REDIS_URL)
 prompt_registry = PromptRegistry()
-task_queue = PersistentTaskQueue(redis)
+event_bus = KafkaRefundEventBus()
 guard_runner = RefundGuardRunner()
 ragas_evaluator = RefundRAGASEvaluator()
 
@@ -79,57 +79,49 @@ async def startup():
     # Initialise LangGraph PostgreSQL checkpointer
     await init_checkpointer()
 
-    logger.info("startup_complete")
+    await event_bus.start_producer()
+    await event_bus.start_consumer(_handle_kafka_event)
 
-    # ── Crash recovery: re-enqueue incomplete tasks ──────────────────
-    incomplete = await task_queue.get_incomplete_tasks()
+    incomplete = await event_bus.get_incomplete_tasks()
     if incomplete:
-        logger.info("recovering_incomplete_tasks", count=len(incomplete))
-    for task_payload in incomplete:
-        tid = task_payload["task_id"]
-        # Skip tasks already in HITL — they need human action, not auto-restart
-        if task_payload.get("status") == "hitl_pending":
-            logger.info("skipping_hitl_task_on_recovery", task_id=tid)
-            continue
-        asyncio.create_task(_recover_task(task_payload))
+        logger.info(
+            "kafka_recovery_note",
+            incomplete_meta=len(incomplete),
+            message="Uncommitted Kafka offsets will be redelivered by the consumer group",
+        )
 
-    # ── Periodic queue cleanup (every 6 hours) ────────────────────────
     asyncio.create_task(_run_periodic_cleanup())
 
-    # ── Initial cleanup of stale completed tasks ──────────────────────
-    removed = await task_queue.cleanup()
+    removed = await event_bus.cleanup()
     if removed:
-        logger.info("startup_queue_cleanup", removed=removed)
+        logger.info("startup_task_meta_cleanup", removed=removed)
+
+    logger.info("startup_complete")
 
 
-async def _recover_task(task_payload: dict) -> None:
-    """Wrapper for crash-recovered tasks with exception logging."""
-    tid = task_payload["task_id"]
-    try:
-        logger.info("crash_recovery_started", task_id=tid)
-        await _process_refund(
-            tid,
-            task_payload["customer_email"],
-            task_payload["order_id"],
-            task_payload["refund_reason"],
-        )
-        logger.info("crash_recovery_completed", task_id=tid)
-    except Exception as e:
-        import traceback
-        logger.error(
-            "crash_recovery_failed",
-            task_id=tid,
-            error=str(e),
-            traceback=traceback.format_exc(),
-        )
+@app.on_event("shutdown")
+async def shutdown():
+    await event_bus.stop()
+
+
+async def _handle_kafka_event(event: dict) -> None:
+    """Kafka consumer handler — runs refund workflow for each event."""
+    task_id = event["task_id"]
+    await _process_refund(
+        task_id,
+        event["customer_email"],
+        event["order_id"],
+        event["refund_reason"],
+        recovered_state=event.get("recovered_state"),
+    )
 
 
 async def _run_periodic_cleanup() -> None:
-    """Remove completed/failed tasks from Redis queue every 6 hours."""
+    """Remove stale task metadata from Redis every 6 hours."""
     while True:
         await asyncio.sleep(6 * 3600)
         try:
-            removed = await task_queue.cleanup()
+            removed = await event_bus.cleanup()
             logger.info("periodic_queue_cleanup", removed=removed)
         except Exception as e:
             logger.warning("periodic_queue_cleanup_failed", error=str(e))
@@ -183,7 +175,14 @@ async def _process_refund(
         order_id=order_id,
     )
     try:
-        await task_queue.mark_processing(task_id)
+        existing = await redis.get(f"task:{task_id}")
+        if existing:
+            prior = json.loads(existing)
+            if prior.get("status") in ("completed", "hitl_pending"):
+                logger.info("task_already_finished", task_id=task_id, status=prior.get("status"))
+                return
+
+        await event_bus.mark_processing(task_id)
         logger.info("task_started", customer_email=f"***{customer_email.split('@')[-1]}")
 
         # Guardrails-AI input validation (traced to LangSmith)
@@ -210,7 +209,7 @@ async def _process_refund(
                 "message": "Task requires human review. Use POST /hitl/tasks/{task_id}/resolve.",
             }
             await redis.set(f"task:{task_id}", json.dumps(hitl_output), ex=86400)
-            await task_queue.mark_done(task_id, status="hitl_pending")
+            await event_bus.mark_done(task_id, status="hitl_pending")
             await _update_idempotency_status(task_id, "hitl_pending")
             await _persist_task_result(task_id, {
                 "status": "hitl_pending",
@@ -254,7 +253,7 @@ async def _process_refund(
             "compensated": result.get("compensated", False),
         }
         await redis.set(f"task:{task_id}", json.dumps(output), ex=3600)
-        await task_queue.mark_done(task_id, status="completed")
+        await event_bus.mark_done(task_id, status="completed")
         await _update_idempotency_status(task_id, "completed")
         await _persist_task_result(task_id, {
             "status": "completed",
@@ -278,7 +277,7 @@ async def _process_refund(
         )
         error_result = {"status": "error", "error": str(e)}
         await redis.set(f"task:{task_id}", json.dumps(error_result), ex=3600)
-        await task_queue.mark_done(task_id, status="failed")
+        await event_bus.mark_done(task_id, status="failed")
         await _update_idempotency_status(task_id, "failed")
         await _persist_task_result(task_id, {
             "status": "error",
@@ -313,7 +312,7 @@ async def _run_ragas_evaluation(task_id: str, refund_reason: str, result: dict) 
 
 
 @app.post("/refund")
-async def create_refund(request: RefundRequest, background_tasks: BackgroundTasks):
+async def create_refund(request: RefundRequest):
     # ── Input validation: reject obvious prompt injection attempts ─────
     try:
         sanitize_input(request.refund_reason, raise_on_injection=True, field_name="refund_reason")
@@ -385,18 +384,18 @@ async def create_refund(request: RefundRequest, background_tasks: BackgroundTask
     # ── Write to Redis cache (fast subsequent lookups) ───────────────
     await redis.set(f"idempotency:{idem_key}", task_id, ex=IDEMPOTENCY_TTL)
 
-    # ── Persist in queue BEFORE starting work ────────────────────────
-    await task_queue.enqueue(task_id, {
+    await event_bus.publish_refund_requested(task_id, {
         "customer_email": request.customer_email,
         "order_id": request.order_id,
         "refund_reason": request.refund_reason,
     })
-
-    background_tasks.add_task(
-        _process_refund, task_id,
-        request.customer_email, request.order_id, request.refund_reason
-    )
-    return {"task_id": task_id, "status": "processing", "idempotency_key": idem_key}
+    return {
+        "task_id": task_id,
+        "status": "processing",
+        "idempotency_key": idem_key,
+        "transport": "kafka",
+        "topic": "refund.requests",
+    }
 
 
 @app.get("/refund/{task_id}")
@@ -472,7 +471,6 @@ async def list_hitl_tasks(status: str = "pending"):
 async def resolve_hitl_task(
     task_id: str,
     request: HITLResolveRequest,
-    background_tasks: BackgroundTasks,
 ):
     """Resolve a HITL task.
 
@@ -558,17 +556,14 @@ async def resolve_hitl_task(
         order_id = recovered.get("order_id", 0)
         refund_reason = recovered.get("refund_reason", "")
 
-        # Re-enqueue so crash recovery works
-        await task_queue.enqueue(task_id, {
-            "customer_email": customer_email,
-            "order_id": order_id,
-            "refund_reason": refund_reason,
-        })
         await _update_idempotency_status(task_id, "processing")
-
-        background_tasks.add_task(
-            _process_refund, task_id,
-            customer_email, order_id, refund_reason,
+        await event_bus.publish_refund_requested(
+            task_id,
+            {
+                "customer_email": customer_email,
+                "order_id": order_id,
+                "refund_reason": refund_reason,
+            },
             recovered_state=recovered,
         )
 

@@ -64,7 +64,7 @@
 │                                                                        │
 │  PostgreSQL        │ Redis              │ Pinecone (Vector DB)         │
 │  • 12 tables       │ • Semantic cache   │ • Policy embeddings          │
-│  • Audit logs      │ • Task queue       │ • Similar decisions          │
+│  • Audit logs      │ • Kafka events     │ • Similar decisions          │
 │  • Checkpoints     │ • Checkpoints(hot) │                              │
 │  • Idempotency     │ • Idempotency      │                              │
 │                    │ • Circuit state    │                              │
@@ -101,7 +101,7 @@
 | Migrations | `alembic` | Versioned schema changes, rollback support |
 | Cache/Queue | Redis 7+ | Sub-ms latency, pub/sub, sorted sets for queue |
 | Vector DB | Pinecone | Managed, scalable policy retrieval |
-| Task queue | Custom (Redis sorted sets) | Priority-based, persistent, cleanup built-in |
+| Task queue | Kafka (`refund.requests`) + aiokafka | Event-driven, consumer groups, offset-based crash recovery |
 
 ### Resilience & Safety
 
@@ -250,7 +250,7 @@ Every state transition checkpointed:
 ```
 
 **Recovery Flow:**
-1. On startup → scan `persistent_task_queue` for status="processing"
+1. On startup → Kafka consumer group joins `refund-workers` and processes uncommitted `refund.requests` events
 2. For each pending task → load checkpoint from Redis (fast) or PostgreSQL (fallback)
 3. Resume LangGraph from last completed agent
 4. If no checkpoint → restart from beginning (idempotent tools)
@@ -406,7 +406,7 @@ refund_system/
 │   ├── seed_data.py
 │   ├── run_evaluation.py
 │   └── migrate.py
-├── task_queue_store/          # Persistent task queue
+├── task_queue_store/          # Kafka event bus (refund.requests)
 ├── telemetry/                 # OpenTelemetry + LangSmith
 ├── tests/                     # All tests
 │   ├── unit/
@@ -435,6 +435,9 @@ DATABASE_URL_SYNC=postgresql://user:pass@localhost:5433/refund_db
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_TOPIC_REFUND_REQUESTS=refund.requests
+KAFKA_CONSUMER_GROUP=refund-workers
 
 # Vector DB
 PINECONE_API_KEY=pcsk_...
@@ -1085,7 +1088,7 @@ Row 4: Infrastructure
 - [x] Circuit breaker + retry + fallback
 - [x] Semantic cache
 - [x] HITL escalation flow
-- [x] Persistent task queue
+- [x] Kafka event bus (`refund.requests`)
 - [x] Structured logging
 - [x] OpenTelemetry + LangSmith tracing
 
@@ -1136,7 +1139,7 @@ Row 4: Infrastructure
 | LLM provider | OpenAI | Unified API for main, fast, and fallback models; strong tool-calling |
 | Redis + PostgreSQL | Dual-layer everything | Redis = speed, PostgreSQL = durability |
 | Background tasks vs. sync | Background (202 + polling) | Refund processing takes 5-30s, don't block HTTP |
-| Custom task queue vs. Celery | Custom Redis queue | Simpler, no broker dependency, persistent by design |
+| Kafka vs. Redis queue | Kafka (`refund.requests`) | Durable log, consumer groups, offset-based crash recovery, event-driven scale-out |
 | Pinecone vs. pgvector | Pinecone | Managed, no ops overhead, ANN at scale |
 | Single repo vs. microservices | Monolith (single FastAPI) | Simpler at current scale, split later if needed |
 

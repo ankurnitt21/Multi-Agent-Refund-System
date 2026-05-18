@@ -21,7 +21,7 @@ The workflow is orchestrated by a LangGraph supervisor pattern:
 3. Communication agent persists output and audit records.
 4. Supervisor decides next step based on shared state and retry/cycle limits.
 
-The API is asynchronous: `POST /refund` immediately returns a `task_id`, and processing continues in background tasks.
+The API is asynchronous: `POST /refund` returns a `task_id` immediately and publishes a `RefundRequested` event to Kafka for processing.
 
 ## Core Architecture
 
@@ -67,7 +67,7 @@ evaluation/          RAGAS evaluator and A/B testing
 executor/            Parallel execution and resilience controls
 guardrails/          Input/output safety and PII handling
 prompts/             Prompt files, registry, versioning support
-task_queue_store/    Redis-backed durable task queue
+task_queue_store/    Kafka event bus (refund.requests topic)
 telemetry/           Tracing and telemetry setup
 tools/               Domain tools used by agents
 ui/                  Streamlit frontend
@@ -79,7 +79,8 @@ main.py              FastAPI entrypoint
 ## Prerequisites
 
 - Python 3.10+
-- Redis
+- Redis (caching and idempotency)
+- Kafka (refund event bus)
 - PostgreSQL
 - Pinecone account/API key
 - OpenAI API key
@@ -96,6 +97,9 @@ Environment variables used by `config.py`:
 - `EMBEDDING_DIMENSION` (default: `1536`)
 - `DATABASE_URL` (default: `postgresql+asyncpg://user:pass@localhost:5432/refund_db`)
 - `REDIS_URL` (default: `redis://localhost:6379`)
+- `KAFKA_BOOTSTRAP_SERVERS` (default: `localhost:9092`)
+- `KAFKA_TOPIC_REFUND_REQUESTS` (default: `refund.requests`)
+- `KAFKA_CONSUMER_GROUP` (default: `refund-workers`)
 - `PINECONE_API_KEY`
 - `PINECONE_INDEX_NAME` (default: `warehouse-refund-policies`)
 - `PINECONE_ENVIRONMENT` (default: `us-east-1`)
@@ -113,7 +117,7 @@ Environment variables used by `config.py`:
 pip install -r requirements.txt
 ```
 
-3. Start infrastructure (Redis + PostgreSQL):
+3. Start infrastructure (PostgreSQL, Redis, Kafka):
 
 ```bash
 docker compose up -d
@@ -137,6 +141,7 @@ The included `docker-compose.yml` starts:
 
 - `postgres` on host port `5433` (container `5432`)
 - `redis` on host port `6379`
+- `kafka` on host port `9092` (with Zookeeper on `2181`)
 
 If you use compose defaults, set:
 

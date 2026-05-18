@@ -190,10 +190,10 @@
               GEN_TASK["Generate task_id = uuid4()"]
           end
 
-          subgraph QUEUE ["📦 Persistent Task Queue — task_queue_store/task_queue.py (Redis)"]
-              Q_ENQUEUE["HSET refund:tasks  task_id→payload\nSADD refund:tasks:pending  status=pending"]
-              Q_PROCESSING["HSET status=processing\nwhen workflow starts"]
-              Q_DONE["SREM from pending set\nHSET status=completed/failed/hitl_pending\nfinished_at timestamp"]
+          subgraph QUEUE ["📦 Kafka Event Bus — task_queue_store/kafka_events.py"]
+              Q_ENQUEUE["PRODUCE refund.requests\nRefundRequested event\ntask_id as message key"]
+              Q_PROCESSING["Consumer group refund-workers\nmark_processing in Redis meta"]
+              Q_DONE["commit offset after success\nmark_done completed/failed/hitl_pending"]
               Q_CLEANUP["⏰ Cleanup: on startup + every 6 h\nremoves completed/failed entries older than 24 h"]
           end
 
@@ -237,7 +237,7 @@
           subgraph CRASH_GRP ["💥 Crash Recovery — startup()"]
               CRASH_EVENT(["Process killed mid-workflow"])
               RESTART(["Server restart — startup() called"])
-              RECOVER["get_incomplete_tasks()\nread refund:tasks:pending\nskip status=hitl_pending (need human)"]
+              RECOVER["Kafka consumer group\nredelivers uncommitted offsets\nskip hitl_pending in handler"]
               REINVOKE["_recover_task()\nlogs exceptions\ncalls _process_refund same task_id"]
               CP_LOAD["load_checkpoint()\n1. Redis fast path\n2. PostgreSQL cold fallback\nInject recovered state\nsupervisor sees completed fields\nskips finished agents automatically"]
           end

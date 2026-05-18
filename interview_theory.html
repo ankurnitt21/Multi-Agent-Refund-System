@@ -505,7 +505,7 @@
             <tr>
               <td><strong>Cache / Queue</strong></td>
               <td>Redis (asyncio client)</td>
-              <td>Idempotency cache, task queue, agent checkpoints, semantic cache</td>
+              <td>Idempotency cache, Kafka event bus, agent checkpoints, semantic cache</td>
             </tr>
             <tr>
               <td><strong>Database</strong></td>
@@ -697,10 +697,11 @@ START → supervisor → [validation | policy | communication | hitl]
           </div>
           <div class="flow-step">
             <div class="step-body">
-              <h4>Enqueue task in Redis persistent queue</h4>
+              <h4>Publish refund event to Kafka</h4>
               <p>
-                HSET the payload to <code>refund:tasks</code> hash; SADD task_id to
-                <code>refund:tasks:pending</code> set. This enables crash recovery on restart.
+                Produce a <code>RefundRequested</code> event to the <code>refund.requests</code> topic
+                (key = <code>task_id</code>). The <code>refund-workers</code> consumer group processes
+                events with manual offset commit after success — crash recovery via Kafka redelivery.
               </p>
             </div>
           </div>
@@ -1099,8 +1100,8 @@ VALIDATION_DEPS = {
           <h3>Recovery Flow</h3>
           <ol>
             <li>
-              <code>task_queue.get_incomplete_tasks()</code> reads all task_ids from
-              <code>refund:tasks:pending</code> set
+              The Kafka consumer group redelivers uncommitted messages; Redis
+              <code>refund:task_meta</code> tracks status for observability
             </li>
             <li>Skip tasks with <code>status=hitl_pending</code> — these need human action, not auto-restart</li>
             <li>For each recoverable task: <code>asyncio.create_task(_recover_task(payload))</code></li>
@@ -1786,8 +1787,8 @@ Fallback Large: gpt-4o</code></pre>
           <div class="qa-q" onclick="toggleQA(this)">What happens if the server crashes mid-workflow?</div>
           <div class="qa-a">
             <p>
-              The Redis task queue persists every in-progress task. On <code>startup()</code>, we call
-              <code>get_incomplete_tasks()</code> which reads the <code>refund:tasks:pending</code> set from Redis. For
+              Kafka persists every refund request event. On <code>startup()</code>, the consumer group calls
+              Kafka consumer redelivery for uncommitted offsets. For
               each task (excluding HITL-pending ones which need human input), we call <code>_recover_task()</code>. This
               invokes <code>run_workflow()</code> with the same <code>thread_id</code>. Inside, we call
               <code>load_checkpoint()</code> which tries Redis first, then PostgreSQL. The recovered state is injected
