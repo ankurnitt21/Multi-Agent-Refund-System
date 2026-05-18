@@ -3,8 +3,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_MAIN_MODEL = os.getenv("OPENAI_MAIN_MODEL", "gpt-4o-mini")
+OPENAI_FAST_MODEL = os.getenv("OPENAI_FAST_MODEL", "gpt-4.1-nano")
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1536"))
+
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://user:pass@localhost:5432/refund_db")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")

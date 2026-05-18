@@ -1,7 +1,7 @@
 import structlog
 from opentelemetry import trace
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 
 from agents.react_loop import react_loop, ReactMaxIterationsError
 from agents.state import RefundState
@@ -18,7 +18,7 @@ from tools.analytics_tools import (
     get_customer_order_summary, get_refund_rate_by_category,
     get_similar_refund_decisions,
 )
-from config import GROQ_API_KEY, GROQ_MODEL
+from config import OPENAI_API_KEY, OPENAI_MAIN_MODEL
 from prompts.loader import load_prompt
 from telemetry.setup import tracer
 
@@ -47,7 +47,7 @@ POLICY_DEPS: dict[str, list[str]] = {
 
 POLICY_SYSTEM = load_prompt("policy_agent")
 
-llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0)
+llm = ChatOpenAI(model=OPENAI_MAIN_MODEL, api_key=OPENAI_API_KEY, temperature=0)
 _llm_with_policy_tools = llm.bind_tools(POLICY_TOOLS)
 
 
@@ -79,7 +79,8 @@ async def policy_agent_node(state: RefundState) -> dict:
 
         try:
             final_content = await react_loop(
-                _llm_with_policy_tools, POLICY_TOOL_MAP, messages, POLICY_DEPS, span=span
+                _llm_with_policy_tools, POLICY_TOOL_MAP, messages, POLICY_DEPS,
+                span=span, max_iterations=12,
             )
 
             parsed = parse_agent_output(

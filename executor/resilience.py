@@ -16,10 +16,10 @@ from enum import Enum
 from typing import Any, Callable, Optional
 
 import structlog
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
 
-from config import GROQ_API_KEY, GROQ_MODEL
+from config import OPENAI_API_KEY, OPENAI_MAIN_MODEL, OPENAI_FAST_MODEL
 from telemetry.setup import tracer
 
 logger = structlog.get_logger(__name__)
@@ -252,7 +252,7 @@ class ModelConfig:
     name: str
     model_id: str
     api_key: str
-    provider: str = "groq"  # groq | openai | anthropic
+    provider: str = "openai"  # openai | anthropic
     temperature: float = 0.0
     max_tokens: int = 4096
     timeout: float = 30.0
@@ -290,23 +290,23 @@ class ModelFallbackChain:
         return [
             ModelConfig(
                 name="primary",
-                model_id=GROQ_MODEL,
-                api_key=GROQ_API_KEY or "",
-                provider="groq",
+                model_id=OPENAI_MAIN_MODEL,
+                api_key=OPENAI_API_KEY or "",
+                provider="openai",
                 priority=0,
             ),
             ModelConfig(
                 name="fallback_fast",
-                model_id="llama-3.1-8b-instant",
-                api_key=GROQ_API_KEY or "",
-                provider="groq",
+                model_id=OPENAI_FAST_MODEL,
+                api_key=OPENAI_API_KEY or "",
+                provider="openai",
                 priority=1,
             ),
             ModelConfig(
                 name="fallback_large",
-                model_id="llama-3.3-70b-versatile",
-                api_key=GROQ_API_KEY or "",
-                provider="groq",
+                model_id="gpt-4o",
+                api_key=OPENAI_API_KEY or "",
+                provider="openai",
                 priority=2,
             ),
         ]
@@ -314,8 +314,8 @@ class ModelFallbackChain:
     def _get_llm(self, config: ModelConfig) -> BaseChatModel:
         """Get or create LLM instance for a model config."""
         if config.name not in self._llm_cache:
-            if config.provider == "groq":
-                self._llm_cache[config.name] = ChatGroq(
+            if config.provider == "openai":
+                self._llm_cache[config.name] = ChatOpenAI(
                     model=config.model_id,
                     api_key=config.api_key,
                     temperature=config.temperature,
@@ -323,12 +323,7 @@ class ModelFallbackChain:
                     timeout=config.timeout,
                 )
             else:
-                # Extensible for other providers
-                self._llm_cache[config.name] = ChatGroq(
-                    model=config.model_id,
-                    api_key=config.api_key,
-                    temperature=config.temperature,
-                )
+                raise ValueError(f"Unsupported LLM provider: {config.provider}")
         return self._llm_cache[config.name]
 
     async def invoke(

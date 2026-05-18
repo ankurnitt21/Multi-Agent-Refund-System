@@ -1,7 +1,7 @@
 import structlog
 from opentelemetry import trace
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 
 from agents.react_loop import react_loop, ReactMaxIterationsError
 from agents.state import RefundState
@@ -10,8 +10,9 @@ from agents.output_models import CommunicationOutput
 from tools.db_tools import (
     save_processed_request, update_customer_analytics,
     update_refund_request_status, log_audit_event,
+    ensure_refund_request_id,
 )
-from config import GROQ_API_KEY, GROQ_MODEL
+from config import OPENAI_API_KEY, OPENAI_FAST_MODEL
 from prompts.loader import load_prompt
 from telemetry.setup import tracer
 
@@ -33,7 +34,7 @@ COMMUNICATION_DEPS: dict[str, list[str]] = {
 
 COMMUNICATION_SYSTEM = load_prompt("communication_agent")
 
-llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0)
+llm = ChatOpenAI(model=OPENAI_FAST_MODEL, api_key=OPENAI_API_KEY, temperature=0)
 _llm_with_comm_tools = llm.bind_tools(COMMUNICATION_TOOLS)
 
 
@@ -42,12 +43,20 @@ async def communication_agent_node(state: RefundState) -> dict:
         span.set_attribute("langsmith.span.kind", "chain")
         span.set_attribute("agent.name", "communication_agent")
 
+        refund_request_id = state.get("refund_request_id")
+        if not refund_request_id and state.get("order_id") and state.get("customer_id"):
+            refund_request_id = await ensure_refund_request_id(
+                order_id=state["order_id"],
+                customer_id=state["customer_id"],
+                reason=state.get("refund_reason", "Refund workflow"),
+            )
+
         user_message = (
             f"Persist the following refund decision:\n"
             f"- Customer ID: {state.get('customer_id')}\n"
             f"- Customer Name: {state.get('customer_name')}\n"
             f"- Order ID: {state.get('order_id')}\n"
-            f"- Refund Request ID: {state.get('refund_request_id')}\n"
+            f"- Refund Request ID: {refund_request_id}\n"
             f"- Decision: {state.get('decision')}\n"
             f"- Refund Amount: ${state.get('refund_amount', 0.0)}\n"
             f"- Policy Applied: {state.get('policy_applied')}\n"
@@ -73,7 +82,8 @@ async def communication_agent_node(state: RefundState) -> dict:
             parsed = parsed.model_dump() if hasattr(parsed, "model_dump") else parsed
 
             return {
-                "request_saved": parsed.get("request_saved", True),
+                "refund_request_id": refund_request_id,
+                "request_saved": True,
                 "analytics_updated": parsed.get("analytics_updated", True),
                 "status_updated": parsed.get("status_updated", True),
                 "messages": [AIMessage(content=parsed.get("confirmation_message", "All records updated."))],

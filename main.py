@@ -2,7 +2,12 @@ import uuid
 import json
 import hashlib
 import asyncio
+import sys
 from datetime import datetime
+
+# psycopg async pool requires SelectorEventLoop on Windows
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import structlog
 from fastapi import FastAPI, BackgroundTasks, Header
@@ -769,5 +774,13 @@ async def stop_experiment(experiment_id: str):
 
 
 if __name__ == "__main__":
+    import asyncio
+    import sys
+
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+    # psycopg async pool requires SelectorEventLoop on Windows
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

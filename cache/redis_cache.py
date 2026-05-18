@@ -2,15 +2,18 @@ import json
 import uuid
 import numpy as np
 from redis.asyncio import Redis
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
-from config import REDIS_URL
+from config import REDIS_URL, OPENAI_API_KEY, OPENAI_EMBEDDING_MODEL
 
 
 class SemanticCache:
     def __init__(self):
         self.redis = Redis.from_url(REDIS_URL)
-        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        self.embeddings = OpenAIEmbeddings(
+            model=OPENAI_EMBEDDING_MODEL,
+            api_key=OPENAI_API_KEY,
+        )
         self.ttl = 3600
         self.similarity_threshold = 0.92
 

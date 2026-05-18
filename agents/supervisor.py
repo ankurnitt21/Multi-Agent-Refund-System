@@ -1,11 +1,11 @@
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.tools import tool
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from opentelemetry import trace
 import structlog
 
 from agents.state import RefundState
-from config import GROQ_API_KEY, GROQ_MODEL
+from config import OPENAI_API_KEY, OPENAI_MAIN_MODEL
 from prompts.loader import load_prompt
 from telemetry.setup import tracer
 
@@ -63,7 +63,7 @@ TOOL_TO_AGENT: dict[str, str] = {
     "finish_workflow":          "end",
 }
 
-llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0)
+llm = ChatOpenAI(model=OPENAI_MAIN_MODEL, api_key=OPENAI_API_KEY, temperature=0)
 # tool_choice="any" forces the model to always call exactly one routing tool
 _supervisor_llm = llm.bind_tools(ROUTING_TOOLS, tool_choice="any")
 

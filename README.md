@@ -82,15 +82,18 @@ main.py              FastAPI entrypoint
 - Redis
 - PostgreSQL
 - Pinecone account/API key
-- Groq API key
+- OpenAI API key
 - (Optional) LangSmith API key for tracing and RAGAS observability
 
 ## Configuration
 
 Environment variables used by `config.py`:
 
-- `GROQ_API_KEY`
-- `GROQ_MODEL` (default: `llama-3.1-8b-instant`)
+- `OPENAI_API_KEY`
+- `OPENAI_MAIN_MODEL` (default: `gpt-4o-mini`) — supervisor and policy agent
+- `OPENAI_FAST_MODEL` (default: `gpt-4.1-nano`) — validation and communication agents
+- `OPENAI_EMBEDDING_MODEL` (default: `text-embedding-3-small`)
+- `EMBEDDING_DIMENSION` (default: `1536`)
 - `DATABASE_URL` (default: `postgresql+asyncpg://user:pass@localhost:5432/refund_db`)
 - `REDIS_URL` (default: `redis://localhost:6379`)
 - `PINECONE_API_KEY`

@@ -420,12 +420,12 @@
       <div class="hero">
         <h1>🏭 Warehouse Refund Processing System</h1>
         <p>
-          A production-grade, multi-agent AI system built with LangGraph, FastAPI, and Groq LLMs to autonomously process
+          A production-grade, multi-agent AI system built with LangGraph, FastAPI, and OpenAI LLMs to autonomously process
           warehouse refund requests with full crash recovery, human oversight, and audit compliance.
         </p>
         <div class="tag-row">
           <span class="tag">LangGraph</span><span class="tag">FastAPI</span><span class="tag">LangChain</span>
-          <span class="tag">Groq LLM (Llama-3.1-8b)</span><span class="tag">Redis</span
+          <span class="tag">OpenAI (gpt-4o-mini / gpt-4.1-nano)</span><span class="tag">Redis</span
           ><span class="tag">PostgreSQL</span> <span class="tag">Pinecone</span><span class="tag">OpenTelemetry</span
           ><span class="tag">LangSmith</span> <span class="tag">SQLAlchemy</span><span class="tag">Streamlit</span
           ><span class="tag">Docker</span>
@@ -438,7 +438,7 @@
         <p>
           This system automates warehouse refund processing using a <strong>multi-agent AI workflow</strong>. When a
           customer submits a refund request via REST API, the system orchestrates three specialized AI agents —
-          Validation, Policy, and Communication — each powered by a Groq LLM using the
+          Validation, Policy, and Communication — each powered by an OpenAI LLM using the
           <strong>ReAct (Reasoning + Acting)</strong> pattern with database and vector tools.
         </p>
 
@@ -494,12 +494,12 @@
             </tr>
             <tr>
               <td><strong>LLM</strong></td>
-              <td>Groq — Llama-3.1-8b-instant</td>
+              <td>OpenAI — gpt-4o-mini / gpt-4.1-nano</td>
               <td>Powers supervisor routing and all 3 ReAct agents</td>
             </tr>
             <tr>
               <td><strong>LLM Framework</strong></td>
-              <td>LangChain (langchain-groq)</td>
+              <td>LangChain (langchain-openai)</td>
               <td>Tool binding, message types (SystemMessage, HumanMessage, ToolMessage, AIMessage)</td>
             </tr>
             <tr>
@@ -519,8 +519,8 @@
             </tr>
             <tr>
               <td><strong>Embeddings</strong></td>
-              <td>HuggingFace all-MiniLM-L6-v2</td>
-              <td>384-dim sentence embeddings for policy search</td>
+              <td>OpenAI text-embedding-3-small</td>
+              <td>1536-dim embeddings for policy search</td>
             </tr>
             <tr>
               <td><strong>LangGraph Checkpoint</strong></td>
@@ -1273,7 +1273,7 @@ VALIDATION_DEPS = {
             <h3>Pinecone Setup</h3>
             <ul>
               <li>Index: <code>warehouse-refund-policies</code> (serverless, AWS us-east-1)</li>
-              <li>Dimensions: 384 (all-MiniLM-L6-v2)</li>
+              <li>Dimensions: 1536 (text-embedding-3-small)</li>
               <li>Metric: cosine similarity</li>
               <li>
                 8 policy documents indexed: general, electronics, furniture, gold/silver/bronze tiers, fraud policy,
@@ -1621,11 +1621,11 @@ results = await asyncio.gather(*tasks)</code></pre>
           <div class="card accent-blue">
             <h3>🔄 Model Fallback Chain</h3>
             <p><strong>Pattern:</strong> Automatic failover between LLMs</p>
-            <pre style="margin-top: 8px; font-size: 0.78rem; background: var(--bg); padding: 12px; border-radius: 6px; overflow-x: auto"><code>Primary: llama-3.1-8b-instant
+            <pre style="margin-top: 8px; font-size: 0.78rem; background: var(--bg); padding: 12px; border-radius: 6px; overflow-x: auto"><code>Primary: gpt-4o-mini
   ↓ circuit open / error
-Fallback Fast: llama-3.1-8b-instant (alt endpoint)
+Fallback Fast: gpt-4.1-nano
   ↓ circuit open / error
-Fallback Large: llama-3.3-70b-versatile</code></pre>
+Fallback Large: gpt-4o</code></pre>
             <p style="margin-top: 12px"><strong>LangSmith Visibility:</strong></p>
             <ul style="padding-left: 18px; color: var(--muted); font-size: 0.85rem">
               <li><code>fallback.model_used</code> — which model actually served the request</li>
@@ -1866,8 +1866,8 @@ Fallback Large: llama-3.3-70b-versatile</code></pre>
           <div class="qa-q" onclick="toggleQA(this)">How does the policy agent use vector search?</div>
           <div class="qa-a">
             <p>
-              The <code>search_policies</code> tool embeds the query using HuggingFace
-              <code>all-MiniLM-L6-v2</code> (384 dimensions), then queries a Pinecone serverless index
+              The <code>search_policies</code> tool embeds the query using OpenAI
+              <code>text-embedding-3-small</code> (1536 dimensions), then queries a Pinecone serverless index
               (<code>warehouse-refund-policies</code>) using cosine similarity to find the top 3 most relevant warehouse
               policy documents. Before embedding, it checks a Redis semantic cache — if the query (or a similar one) was
               recently made, it returns cached results. This avoids unnecessary Pinecone API calls and re-embedding the
@@ -1884,7 +1884,7 @@ Fallback Large: llama-3.3-70b-versatile</code></pre>
           <div class="qa-a">
             <p>
               No, it's LLM-driven. The supervisor uses
-              <code>llm.bind_tools(ROUTING_TOOLS, tool_choice="any")</code> which forces the Groq LLM to always call
+              <code>llm.bind_tools(ROUTING_TOOLS, tool_choice="any")</code> which forces the OpenAI LLM to always call
               exactly one of the four routing tools (<code>call_validation_agent</code>, <code>call_policy_agent</code>,
               <code>call_communication_agent</code>, <code>finish_workflow</code>). The LLM receives the current state
               summary and the tool descriptions (which encode the routing rules) and decides which to call. This means
@@ -1959,7 +1959,7 @@ Fallback Large: llama-3.3-70b-versatile</code></pre>
                 pool; API layer only handles HTTP and task enqueuing
               </li>
               <li>
-                <strong>LLM concurrency:</strong> Each task uses its own LLM instances; Groq's rate limits are the
+                <strong>LLM concurrency:</strong> Each task uses its own LLM instances; OpenAI's rate limits are the
                 current bottleneck — a queue depth limit or token bucket would be added
               </li>
               <li>
@@ -2009,7 +2009,7 @@ Fallback Large: llama-3.3-70b-versatile</code></pre>
           </div>
           <div class="qa-a">
             <p>
-              Our agents use tool-calling LLMs (Groq/Llama) in a ReAct loop, so the final "answer" comes as free-text
+              Our agents use tool-calling LLMs (OpenAI) in a ReAct loop, so the final "answer" comes as free-text
               after tool execution — not as a structured tool call. LangChain's <code>JsonOutputParser</code> expects a
               specific prompt format that doesn't fit our ReAct pattern. Our parser tries three strategies in order: (1)
               direct <code>json.loads()</code> on the full response, (2) regex extraction from

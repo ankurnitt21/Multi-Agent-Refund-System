@@ -79,13 +79,40 @@ def _execution_waves(
     return waves
 
 
-async def _call_tool(tool_map: dict, tc: dict) -> str:
+def _resolve_tool_args(tc: dict, messages: list) -> dict:
+    """Fill missing tool args from prior ToolMessages in this ReAct turn."""
+    args = dict(tc.get("args") or {})
+    if tc["name"] != "calculate_refund":
+        return args
+
+    existing = _parse_eligibility_arg(args.get("eligibility_result"))
+    if existing is not None:
+        return args
+
+    for msg in reversed(messages):
+        if getattr(msg, "name", None) == "check_eligibility" and getattr(msg, "content", None):
+            args["eligibility_result"] = msg.content
+            break
+    return args
+
+
+def _parse_eligibility_arg(value) -> dict | None:
+    if not value or not str(value).strip():
+        return None
+    try:
+        return json.loads(str(value))
+    except json.JSONDecodeError:
+        return None
+
+
+async def _call_tool(tool_map: dict, tc: dict, messages: list | None = None) -> str:
     """Execute one tool call; always returns a JSON string."""
     tool = tool_map.get(tc["name"])
     try:
         if tool is None:
             return json.dumps({"error": f"Unknown tool: {tc['name']}"})
-        raw = await tool.ainvoke(tc["args"])
+        args = _resolve_tool_args(tc, messages or [])
+        raw = await tool.ainvoke(args)
         return json.dumps(raw) if not isinstance(raw, str) else raw
     except Exception as exc:
         return json.dumps({"error": str(exc)})
@@ -177,7 +204,7 @@ async def react_loop(
         logger.debug("tool_wave_start", iteration=iteration + 1, tools=wave_tools)
 
         results = await asyncio.gather(
-            *[_call_tool(tool_map, tc) for tc in first_wave]
+            *[_call_tool(tool_map, tc, messages) for tc in first_wave]
         )
 
         duration_ms = round((time.perf_counter() - t0) * 1000, 1)

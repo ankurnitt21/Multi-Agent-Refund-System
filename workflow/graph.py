@@ -1,5 +1,11 @@
+import asyncio
+import sys
+
 import structlog
 from redis.asyncio import Redis
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -170,11 +176,12 @@ refund_workflow = _workflow_builder.compile()
 
 # Will be set during startup with the checkpointer-backed version
 _checkpointed_workflow = None
+_checkpoint_pool = None
 
 
 async def init_checkpointer():
     """Set up PostgreSQL LangGraph checkpointer and Redis client. Called once at startup."""
-    global _checkpointed_workflow, _checkpoint_redis
+    global _checkpointed_workflow, _checkpoint_redis, _checkpoint_pool
 
     try:
         _checkpoint_redis = Redis.from_url(REDIS_URL)
@@ -183,14 +190,27 @@ async def init_checkpointer():
         logger.warning("checkpoint_redis_failed", error=str(e))
         _checkpoint_redis = None
 
-    try:
-        checkpointer = AsyncPostgresSaver.from_conn_string(_CHECKPOINT_DB_URL)
-        await checkpointer.setup()
-        _checkpointed_workflow = _build_workflow().compile(checkpointer=checkpointer)
-        logger.info("checkpointer_ready", backend="postgresql")
-    except Exception as e:
-        logger.warning("checkpointer_failed_fallback", error=str(e), fallback="in-memory")
+    if sys.platform == "win32":
+        logger.info("checkpointer_skipped", reason="Windows SelectorEventLoop + uvicorn compatibility")
         _checkpointed_workflow = None
+        _checkpoint_pool = None
+    else:
+        try:
+            from psycopg_pool import AsyncConnectionPool
+
+            _checkpoint_pool = AsyncConnectionPool(
+                conninfo=_CHECKPOINT_DB_URL,
+                max_size=10,
+                kwargs={"autocommit": True, "prepare_threshold": 0},
+            )
+            checkpointer = AsyncPostgresSaver(conn=_checkpoint_pool)
+            await checkpointer.setup()
+            _checkpointed_workflow = _build_workflow().compile(checkpointer=checkpointer)
+            logger.info("checkpointer_ready", backend="postgresql")
+        except Exception as e:
+            logger.warning("checkpointer_failed_fallback", error=str(e), fallback="in-memory")
+            _checkpointed_workflow = None
+            _checkpoint_pool = None
 
 
 MAX_RECURSION = 50  # Safety limit

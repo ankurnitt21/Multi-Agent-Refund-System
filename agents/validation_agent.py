@@ -1,7 +1,7 @@
 import structlog
 from opentelemetry import trace
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 
 from agents.react_loop import react_loop, ReactMaxIterationsError
 from agents.state import RefundState
@@ -10,8 +10,9 @@ from agents.output_models import ValidationOutput
 from tools.db_tools import (
     lookup_customer, get_order_details,
     verify_order_ownership, get_customer_analytics,
+    ensure_refund_request_id,
 )
-from config import GROQ_API_KEY, GROQ_MODEL
+from config import OPENAI_API_KEY, OPENAI_FAST_MODEL
 from prompts.loader import load_prompt
 from telemetry.setup import tracer
 
@@ -39,7 +40,7 @@ VALIDATION_DEPS: dict[str, list[str]] = {
 
 VALIDATION_SYSTEM = load_prompt("validation_agent")
 
-llm = ChatGroq(model=GROQ_MODEL, api_key=GROQ_API_KEY, temperature=0)
+llm = ChatOpenAI(model=OPENAI_FAST_MODEL, api_key=OPENAI_API_KEY, temperature=0)
 _llm_with_validation_tools = llm.bind_tools(VALIDATION_TOOLS)
 
 
@@ -95,7 +96,14 @@ async def validation_agent_node(state: RefundState) -> dict:
                 risk_score=parsed.get("customer_risk_score"),
             )
 
+            refund_request_id = await ensure_refund_request_id(
+                order_id=parsed.get("order_id") or order_id,
+                customer_id=parsed.get("customer_id"),
+                reason=state.get("refund_reason", "Refund workflow"),
+            )
+
             return {
+                "refund_request_id":   refund_request_id,
                 "customer_id":         parsed.get("customer_id"),
                 "customer_name":       parsed.get("customer_name"),
                 "customer_email":      parsed.get("customer_email"),

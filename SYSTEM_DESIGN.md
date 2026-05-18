@@ -87,8 +87,8 @@
 |-----------|---------|---------|-----|
 | Agent orchestration | `langgraph` | >=0.2 | StateGraph with conditional routing, native checkpointing, HITL support |
 | LLM abstraction | `langchain` | >=0.3 | Unified tool-calling, prompt templates, model wrappers |
-| LLM provider | `langchain-groq` | latest | Fast inference (Llama 3.1 8B), cheap for high-volume refunds |
-| Embeddings | `langchain-huggingface` + `sentence-transformers` | latest | Local embeddings for semantic cache (no API cost) |
+| LLM provider | `langchain-openai` | latest | gpt-4o-mini (main) and gpt-4.1-nano (fast agents) |
+| Embeddings | `langchain-openai` | latest | `text-embedding-3-small` for Pinecone and semantic cache |
 | Checkpointing | `langgraph-checkpoint-postgres` | >=2.0 | Durable state persistence for crash recovery |
 
 ### Infrastructure
@@ -319,9 +319,9 @@ HALF_OPEN: Allow 1 probe request
 ### 4.5 Model Fallback Chain
 
 ```
-Primary:    groq/llama-3.1-8b-instant   (fast, cheap)
-Fallback 1: groq/llama-3.1-70b          (better reasoning)
-Fallback 2: openai/gpt-4o-mini          (different provider)
+Primary:    openai/gpt-4o-mini           (supervisor, policy)
+Fallback 1: openai/gpt-4.1-nano         (fast agents)
+Fallback 2: openai/gpt-4o               (better reasoning)
 ```
 
 ---
@@ -346,7 +346,7 @@ docker-compose up -d  # PostgreSQL (5433) + Redis (6379)
 # 4. Configure environment
 cp .env.example .env
 # Edit .env with your API keys:
-#   GROQ_API_KEY=...
+#   OPENAI_API_KEY=...
 #   PINECONE_API_KEY=...
 #   LANGSMITH_API_KEY=... (optional)
 
@@ -423,9 +423,11 @@ refund_system/
 
 ```env
 # LLM
-GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.1-8b-instant
-GROQ_FALLBACK_MODEL=llama-3.1-70b-versatile
+OPENAI_API_KEY=sk-...
+OPENAI_MAIN_MODEL=gpt-4o-mini
+OPENAI_FAST_MODEL=gpt-4.1-nano
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSION=1536
 
 # Database
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5433/refund_db
@@ -710,8 +712,8 @@ EXPERIMENTS = {
         "significance": 0.05  # p-value threshold
     },
     "model_choice": {
-        "control": "llama-3.1-8b-instant",
-        "variant": "llama-3.1-70b-versatile",
+        "control": "gpt-4o-mini",
+        "variant": "gpt-4o",
         "metric": "latency_vs_accuracy_tradeoff"
     },
     "max_iterations": {
@@ -1015,7 +1017,7 @@ Row 4: Infrastructure
 ```
 1. Check /health endpoint → identify failing component
 2. Check Grafana LLM panel → is it LLM timeout?
-   YES → Check Groq status page, circuit breaker should auto-failover
+   YES → Check OpenAI status page, circuit breaker should auto-failover
    NO  → Continue
 3. Check recent deployments → rollback if < 30 min old
 4. Check DB connections → restart pods if pool exhausted
@@ -1131,7 +1133,7 @@ Row 4: Infrastructure
 |----------|--------|-----------|
 | Supervisor vs. sequential | Supervisor (LLM router) | Handles edge cases, dynamic retries, natural escalation |
 | ReAct vs. plan-and-execute | ReAct per agent | Better for tool-heavy tasks, self-correcting |
-| Groq vs. OpenAI | Groq (primary) | 10x faster inference, cheaper, sufficient for structured tasks |
+| LLM provider | OpenAI | Unified API for main, fast, and fallback models; strong tool-calling |
 | Redis + PostgreSQL | Dual-layer everything | Redis = speed, PostgreSQL = durability |
 | Background tasks vs. sync | Background (202 + polling) | Refund processing takes 5-30s, don't block HTTP |
 | Custom task queue vs. Celery | Custom Redis queue | Simpler, no broker dependency, persistent by design |
@@ -1142,7 +1144,7 @@ Row 4: Infrastructure
 
 | Component | Cost | Notes |
 |-----------|------|-------|
-| Groq API (Llama 3.1 8B) | ~$5 | ~3 calls/refund × 1K tokens avg |
+| OpenAI API (gpt-4o-mini + gpt-4.1-nano) | ~$8 | ~3 calls/refund × 1K tokens avg |
 | Pinecone (Starter) | $0 | Free tier covers policy retrieval |
 | PostgreSQL (RDS db.t3.small) | ~$30 | 2 vCPU, 2GB RAM |
 | Redis (ElastiCache t3.micro) | ~$15 | Single node sufficient |

@@ -1,8 +1,20 @@
 import json
-from pinecone import Pinecone, ServerlessSpec
-from langchain_huggingface import HuggingFaceEmbeddings
+import time
 
-from config import PINECONE_API_KEY, PINECONE_INDEX_NAME, PINECONE_ENVIRONMENT
+import structlog
+from pinecone import Pinecone, ServerlessSpec
+from langchain_openai import OpenAIEmbeddings
+
+logger = structlog.get_logger(__name__)
+
+from config import (
+    PINECONE_API_KEY,
+    PINECONE_INDEX_NAME,
+    PINECONE_ENVIRONMENT,
+    OPENAI_API_KEY,
+    OPENAI_EMBEDDING_MODEL,
+    EMBEDDING_DIMENSION,
+)
 from cache.redis_cache import SemanticCache
 
 POLICY_DOCUMENTS = [
@@ -45,18 +57,55 @@ class PineconeStore:
     def __init__(self):
         self.pc = Pinecone(api_key=PINECONE_API_KEY)
         self.index_name = PINECONE_INDEX_NAME
-        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        self.embeddings = OpenAIEmbeddings(
+            model=OPENAI_EMBEDDING_MODEL,
+            api_key=OPENAI_API_KEY,
+        )
         self.cache = SemanticCache()
-
-        existing_indexes = [idx.name for idx in self.pc.list_indexes()]
-        if self.index_name not in existing_indexes:
-            self.pc.create_index(
-                name=self.index_name,
-                dimension=384,
-                metric="cosine",
-                spec=ServerlessSpec(cloud="aws", region=PINECONE_ENVIRONMENT),
-            )
+        self._ensure_index()
         self.index = self.pc.Index(self.index_name)
+
+    def _create_index(self) -> None:
+        self.pc.create_index(
+            name=self.index_name,
+            dimension=EMBEDDING_DIMENSION,
+            metric="cosine",
+            spec=ServerlessSpec(cloud="aws", region=PINECONE_ENVIRONMENT),
+        )
+        for _ in range(60):
+            desc = self.pc.describe_index(self.index_name)
+            status = desc.status
+            ready = (
+                status.get("ready", False)
+                if isinstance(status, dict)
+                else getattr(status, "ready", False)
+            )
+            if ready or (isinstance(status, dict) and status.get("state") == "Ready"):
+                return
+            time.sleep(2)
+        raise TimeoutError(f"Pinecone index '{self.index_name}' not ready after 120s")
+
+    def _ensure_index(self) -> None:
+        existing = {idx.name for idx in self.pc.list_indexes()}
+        if self.index_name not in existing:
+            self._create_index()
+            return
+
+        desc = self.pc.describe_index(self.index_name)
+        index_dim = desc.dimension
+        if index_dim != EMBEDDING_DIMENSION:
+            logger.warning(
+                "pinecone_index_dimension_mismatch",
+                index=self.index_name,
+                current=index_dim,
+                expected=EMBEDDING_DIMENSION,
+            )
+            self.pc.delete_index(self.index_name)
+            for _ in range(60):
+                if self.index_name not in {idx.name for idx in self.pc.list_indexes()}:
+                    break
+                time.sleep(2)
+            self._create_index()
 
     async def build_policy_index(self):
         vectors = []

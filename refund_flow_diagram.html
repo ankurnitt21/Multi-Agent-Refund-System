@@ -217,14 +217,14 @@
           end
 
           subgraph GRAPH ["⚙️ LangGraph Workflow — warehouse_refund_workflow"]
-              SUP1["🔀 Supervisor Node\nLLM (Groq) picks next agent via tool-call\ncycle_count++ · MAX_CYCLES = 15\nper-agent MAX_RETRIES = 3\nChecks hitl_required FIRST (pass-through)\nLLM error → HITL"]
+              SUP1["🔀 Supervisor Node\nLLM (OpenAI gpt-4o-mini) picks next agent via tool-call\ncycle_count++ · MAX_CYCLES = 15\nper-agent MAX_RETRIES = 3\nChecks hitl_required FIRST (pass-through)\nLLM error → HITL"]
               VAL["✅ Validation Agent\nReAct Parallel Waves:\nWave 0: lookup_customer + get_order_details\nWave 1: get_customer_analytics + verify_order_ownership\nChecks: found · active · delivered · ownership · risk&lt;0.8\nReactMaxIterationsError → HITL"]
               POL["📋 Policy Agent\nReAct Parallel Waves:\nWave 0: search_policies + check_refund_history\n         + check_eligibility + get_product_return_policy\n         + get_customer_order_summary\n         + get_refund_rate_by_category\n         + get_similar_refund_decisions\nWave 1: calculate_refund (needs eligibility)\nReactMaxIterationsError → HITL"]
               COM["💾 Communication Agent\nReAct Single Wave (all parallel):\nsave_processed_request (upsert + dedup)\nupdate_customer_analytics (idempotent)\nupdate_refund_request_status\nlog_audit_event\nDB failure → HITL"]
           end
 
           subgraph PINECONE_GRP ["🔍 Vector Policy Store — Pinecone + Semantic Cache"]
-              PINECONE["Pinecone Index\nwarehouse-refund-policies\nall-MiniLM-L6-v2 embeddings\n8 policy documents indexed\ncosine similarity · top_k=3"]
+              PINECONE["Pinecone Index\nwarehouse-refund-policies\ntext-embedding-3-small (1536-dim)\n8 policy documents indexed\ncosine similarity · top_k=3"]
               SEM_CACHE["Semantic Cache (Redis)\ncached embedding results\nquery → policy docs\navoids re-embedding same query"]
           end
 

@@ -446,11 +446,11 @@ Token-bucket style limiter that prevents thundering herd during outages:
 Automatic failover between LLM providers/models:
 
 ```
-Primary (llama-3.1-8b-instant)
+Primary (gpt-4o-mini)
   ↓ circuit open or error
-Fallback Fast (llama-3.1-8b-instant on different endpoint)
+Fallback Fast (gpt-4.1-nano)
   ↓ circuit open or error
-Fallback Large (llama-3.3-70b-versatile)
+Fallback Large (gpt-4o)
 ```
 
 Each model has its own circuit breaker. The chain respects the retry budget before trying each subsequent model. Used by `react_loop.py` — if the primary LLM call fails, the fallback chain is invoked automatically.

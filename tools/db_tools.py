@@ -12,6 +12,38 @@ from database.models import (
 )
 
 
+async def ensure_refund_request_id(
+    order_id: int,
+    customer_id: int,
+    reason: str = "Refund workflow",
+) -> int:
+    """Return existing pending refund request id or create one for this order."""
+    async with async_session_factory() as session:
+        result = await session.execute(
+            select(RefundRequest)
+            .where(
+                RefundRequest.order_id == order_id,
+                RefundRequest.customer_id == customer_id,
+            )
+            .order_by(RefundRequest.id.desc())
+            .limit(1)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            return existing.id
+
+        request = RefundRequest(
+            order_id=order_id,
+            customer_id=customer_id,
+            reason=reason[:500],
+            status="pending",
+        )
+        session.add(request)
+        await session.commit()
+        await session.refresh(request)
+        return request.id
+
+
 @tool
 async def lookup_customer(email: str) -> str:
     """Look up a customer by email address."""

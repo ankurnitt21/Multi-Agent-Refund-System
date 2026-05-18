@@ -130,11 +130,35 @@ async def get_product_return_policy(product_category: str) -> str:
     return json.dumps(policy)
 
 
+def _parse_eligibility(eligibility_result: str | None) -> dict | None:
+    """Parse eligibility JSON from the LLM or a prior tool message."""
+    if not eligibility_result or not str(eligibility_result).strip():
+        return None
+    text = str(eligibility_result).strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
 @tool
-async def calculate_refund(order_id: int, customer_tier: str, eligibility_result: str) -> str:
+async def calculate_refund(
+    order_id: int,
+    customer_tier: str,
+    eligibility_result: str = "",
+) -> str:
     """Calculate the refund amount based on eligibility and tier benefits."""
     try:
-        eligibility = json.loads(eligibility_result)
+        eligibility = _parse_eligibility(eligibility_result)
+        if eligibility is None:
+            eligibility = _parse_eligibility(
+                await check_eligibility.ainvoke(
+                    {"order_id": order_id, "customer_tier": customer_tier}
+                )
+            )
+        if not eligibility:
+            return json.dumps({"refund_amount": 0, "error": "Could not determine eligibility"})
+
         if not eligibility.get("eligible", False):
             return json.dumps({
                 "refund_amount": 0,
