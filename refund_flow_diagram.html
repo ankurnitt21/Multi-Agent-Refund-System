@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warehouse Refund System — Complete Flow Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 32px 16px;
+      }
+      h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+        text-align: center;
+        color: #f8fafc;
+      }
+      p.subtitle {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-bottom: 28px;
+        text-align: center;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 28px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.78rem;
+        background: #1e2330;
+        border: 1px solid #2d3748;
+        border-radius: 6px;
+        padding: 5px 10px;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      button {
+        background: #1e40af;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 18px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #2563eb;
+      }
+      button.secondary {
+        background: #374151;
+      }
+      button.secondary:hover {
+        background: #4b5563;
+      }
+      .diagram-wrapper {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 24px;
+        width: 100%;
+        max-width: 1400px;
+        overflow: auto;
+        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+      }
+      .mermaid {
+        display: flex;
+        justify-content: center;
+      }
+      .zoom-container {
+        transform-origin: top center;
+        transition: transform 0.2s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Warehouse Refund Processing System — Complete Flow Diagram</h1>
+    <p class="subtitle">
+      Multi-Agent LangGraph · LLM Tool-Calling Routing · Parallel ReAct Waves · Dual-Layer Idempotency · Dual-Layer
+      Checkpointing (Redis + PostgreSQL) · Crash Recovery · HITL Queue · Vector Policy Search · Result Persistence ·
+      Guardrails-AI Validation · PII Masking · RAGAS Evaluation · LangSmith Tracing · Output Parser
+    </p>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="dot" style="background: #8b5cf6"></div>
+        Persistent Queue
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #3b82f6"></div>
+        Checkpoints (Redis + PG)
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #0ea5e9"></div>
+        API / Idempotency
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #ef4444"></div>
+        Crash / Recovery
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #f59e0b"></div>
+        Supervisor
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #d97706"></div>
+        Guardrails-AI
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #06b6d4"></div>
+        RAGAS Evaluation
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #ef4444"></div>
+        Resilience (Circuit Breaker / Fallback)
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #22c55e"></div>
+        Happy Path
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #f97316"></div>
+        DB Fallback
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #ec4899"></div>
+        HITL Human Review
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #0f766e"></div>
+        Agent Nodes
+      </div>
+      <div class="legend-item">
+        <div class="dot" style="background: #7c3aed"></div>
+        Vector / Semantic
+      </div>
+    </div>
+
+    <div class="controls">
+      <button onclick="zoom(1.15)">＋ Zoom In</button>
+      <button onclick="zoom(0.87)">－ Zoom Out</button>
+      <button class="secondary" onclick="resetZoom()">Reset</button>
+    </div>
+
+    <div class="diagram-wrapper">
+      <div class="zoom-container" id="zoomTarget">
+        <div id="mermaid-diagram"></div>
+      </div>
+    </div>
+
+    <script type="text/plain" id="diagram-def">
+      flowchart TD
+          USER(["👤 Warehouse Staff / Client\nPOST /refund\nemail · order_id · reason"])
+
+          subgraph API ["🌐 API Layer — main.py (FastAPI)"]
+              IDEM_KEY["Compute idempotency_key\nclient-supplied OR sha256(email:order:reason)"]
+              REDIS_CHECK{"Layer 1 — Redis\nidempotency key cached?"}
+              REDIS_HIT(["↩ Return existing task_id\nstatus: duplicate · sub-millisecond"])
+              DB_CHECK{"Layer 2 — PostgreSQL\nIdempotencyRecord exists?\nguard against Redis flush/restart"}
+              DB_HIT(["Warm Redis · return task_id\nrecovered_from: db"])
+              DB_WRITE["Write IdempotencyRecord to DB\ndurable · IntegrityError = race guard\nstatus = processing"]
+              REDIS_WRITE["Cache key→task_id in Redis\nTTL 24 h"]
+              GEN_TASK["Generate task_id = uuid4()"]
+          end
+
+          subgraph QUEUE ["📦 Persistent Task Queue — task_queue_store/task_queue.py (Redis)"]
+              Q_ENQUEUE["HSET refund:tasks  task_id→payload\nSADD refund:tasks:pending  status=pending"]
+              Q_PROCESSING["HSET status=processing\nwhen workflow starts"]
+              Q_DONE["SREM from pending set\nHSET status=completed/failed/hitl_pending\nfinished_at timestamp"]
+              Q_CLEANUP["⏰ Cleanup: on startup + every 6 h\nremoves completed/failed entries older than 24 h"]
+          end
+
+          subgraph GUARDS ["🛡️ Guardrails-AI Module — guardrails/"]
+              SANITIZE["Input Sanitizer\n1. Strip control chars + Unicode exploits\n2. Enforce 500-char limit\n3. 18 regex injection patterns\n4. Delimiter wrap: USER_INPUT tags"]
+              PII_MASK["PII Masker\nEmail → j***@domain.com\nPhone → [PHONE_REDACTED]\nCC → [CC_REDACTED]\nSSN → [SSN_REDACTED]\nIP → [IP_REDACTED]"]
+              OUTPUT_PARSE["Output Parser\n1. Direct json.loads()\n2. Fenced ```json``` extraction\n3. Brace-depth matching\n4. Pydantic model validation"]
+              GUARD_RUNNER["RefundGuardRunner\n• validate_input() — schema + PII\n• validate_policy_output() — business rules\n• All traced to LangSmith"]
+              REJECT(["⛔ 400 Rejected\nPrompt injection detected\nrequest blocked at API"])
+          end
+
+          subgraph EVAL ["📊 RAGAS Evaluation — evaluation/"]
+              RAGAS["RefundRAGASEvaluator\nParallel metrics via asyncio.gather:\n• Faithfulness\n• Answer Relevancy\n• Context Precision\n• Context Recall\nAll traced to LangSmith"]
+              ABTEST["🧪 A/B Testing\nDeterministic variant assignment\nTraffic splitting + Welch's t-test\nPOST /experiments · GET /experiments/{id}/report"]
+          end
+
+          subgraph RESILIENCE ["🔌 Resilience — executor/resilience.py"]
+              CB["Circuit Breaker\nCLOSED → OPEN (5 failures)\nOPEN → HALF_OPEN (30s)\nHALF_OPEN → CLOSED (2 successes)"]
+              RB["Retry Budget\n20 retries / 60s window\n10% ratio cap\nExponential backoff + jitter"]
+              MF["Model Fallback Chain\nPrimary → Fallback Fast → Fallback Large\nEach model has own circuit breaker\nGET /resilience/health"]
+          end
+
+          subgraph GRAPH ["⚙️ LangGraph Workflow — warehouse_refund_workflow"]
+              SUP1["🔀 Supervisor Node\nLLM (Groq) picks next agent via tool-call\ncycle_count++ · MAX_CYCLES = 15\nper-agent MAX_RETRIES = 3\nChecks hitl_required FIRST (pass-through)\nLLM error → HITL"]
+              VAL["✅ Validation Agent\nReAct Parallel Waves:\nWave 0: lookup_customer + get_order_details\nWave 1: get_customer_analytics + verify_order_ownership\nChecks: found · active · delivered · ownership · risk&lt;0.8\nReactMaxIterationsError → HITL"]
+              POL["📋 Policy Agent\nReAct Parallel Waves:\nWave 0: search_policies + check_refund_history\n         + check_eligibility + get_product_return_policy\n         + get_customer_order_summary\n         + get_refund_rate_by_category\n         + get_similar_refund_decisions\nWave 1: calculate_refund (needs eligibility)\nReactMaxIterationsError → HITL"]
+              COM["💾 Communication Agent\nReAct Single Wave (all parallel):\nsave_processed_request (upsert + dedup)\nupdate_customer_analytics (idempotent)\nupdate_refund_request_status\nlog_audit_event\nDB failure → HITL"]
+          end
+
+          subgraph PINECONE_GRP ["🔍 Vector Policy Store — Pinecone + Semantic Cache"]
+              PINECONE["Pinecone Index\nwarehouse-refund-policies\nall-MiniLM-L6-v2 embeddings\n8 policy documents indexed\ncosine similarity · top_k=3"]
+              SEM_CACHE["Semantic Cache (Redis)\ncached embedding results\nquery → policy docs\navoids re-embedding same query"]
+          end
+
+          subgraph CP ["🗄️ Dual-Layer Explicit Checkpoints — checkpoint/store.py"]
+              CP_REDIS["Redis  wf_checkpoint:{thread_id}\nfull RefundState (no messages)\nTTL 24 h  — fast path"]
+              CP_PG["PostgreSQL  workflow_checkpoints\nupsert on thread_id\ndurable fallback — survives Redis flush"]
+              CP_LG["LangGraph AsyncPostgresSaver\ninternal graph snapshots\nauto-resume by thread_id configurable"]
+          end
+
+          subgraph CRASH_GRP ["💥 Crash Recovery — startup()"]
+              CRASH_EVENT(["Process killed mid-workflow"])
+              RESTART(["Server restart — startup() called"])
+              RECOVER["get_incomplete_tasks()\nread refund:tasks:pending\nskip status=hitl_pending (need human)"]
+              REINVOKE["_recover_task()\nlogs exceptions\ncalls _process_refund same task_id"]
+              CP_LOAD["load_checkpoint()\n1. Redis fast path\n2. PostgreSQL cold fallback\nInject recovered state\nsupervisor sees completed fields\nskips finished agents automatically"]
+          end
+
+          subgraph HITL_GRP ["🧑‍💼 HITL — Human-In-The-Loop"]
+              HITL_NODE["hitl_node\nUpsert HITLTask to PostgreSQL\nstate_json = full RefundState snapshot\nstatus = pending\nCheckpoint KEPT (approve needs it)"]
+              HITL_STORE["task:{id}→hitl_pending  Redis 24h\nIdempotencyRecord → hitl_pending\nTaskResult → hitl_pending  (permanent DB)"]
+              HITL_API(["GET /hitl/tasks\nlists pending HITLTask rows + state snapshots"])
+              HITL_RESOLVE["POST /hitl/tasks/{task_id}/resolve\naction: approve | deny | compensate\nresolved_by · resolution_note"]
+              HITL_DENY(["deny\nWrite denied result → Redis + TaskResult\nIdempotencyRecord → completed\nHITLTask.status → denied"])
+              HITL_COMP(["compensate\nrefund_amount=0 · compensated=true\nTaskResult DB · IdempotencyRecord → completed\nHITLTask.status → compensated"])
+              HITL_APPROVE["approve\nLoad HITLTask.state_json\nReset: cycle_count=0\nagent_retry_counts={}\nhitl_required=None\nrequest_saved=None\nDelete stale LangGraph PG checkpoint\nRe-enqueue · Re-run _process_refund"]
+          end
+
+          subgraph RESULT ["📬 3-Layer Result Storage"]
+              REDIS_RESULT["Redis  task:{task_id}\nfull JSON · TTL 1 h (success) / 24 h (HITL)"]
+              TASK_RESULT_DB["TaskResult table (PostgreSQL)\npermanent · survives Redis TTL\ndecision · refund_amount · policy_reason\nvalidation · customer · compensated · error"]
+              IDEM_STATUS["IdempotencyRecord.status updated\nprocessing → completed / failed / hitl_pending"]
+              GET_STATUS(["GET /refund/{task_id}\n1. Redis → full result\n2. TaskResult DB → full result  source:db\n3. IdempotencyRecord → status only  source:idempotency_db\n4. {status: not_found}"])
+              APPROVED(["✅ status: completed\ndecision: approved\nrefund_amount: $X.XX"])
+              DENIED(["⛔ status: completed\ndecision: denied\npolicy_reason: reason"])
+              FAILED(["❌ status: error\nerror: exception message"])
+          end
+
+          USER --> IDEM_KEY
+          IDEM_KEY --> REDIS_CHECK
+          REDIS_CHECK -- "Hit" --> REDIS_HIT
+          REDIS_CHECK -- "Miss" --> DB_CHECK
+          DB_CHECK -- "Hit (Redis flushed/restarted)" --> DB_HIT
+          DB_CHECK -- "Miss — new request" --> GEN_TASK
+          GEN_TASK --> DB_WRITE
+          DB_WRITE -- "IntegrityError (race condition)" --> DB_HIT
+          DB_WRITE -- "Success" --> REDIS_WRITE
+          REDIS_WRITE --> Q_ENQUEUE
+
+          Q_ENQUEUE --> SANITIZE
+          Q_ENQUEUE --> GUARD_RUNNER
+          SANITIZE -- "injection detected (API mode)" --> REJECT
+          SANITIZE -- "safe" --> PII_MASK
+          GUARD_RUNNER -- "validates schema" --> PII_MASK
+          PII_MASK --> Q_PROCESSING
+          Q_PROCESSING --> SUP1
+
+          SUP1 -- "validation_passed=None\ncall_validation_agent" --> VAL
+          VAL -- "save checkpoint" --> CP_REDIS
+          VAL -- "save checkpoint" --> CP_PG
+          VAL -- "save checkpoint" --> CP_LG
+          VAL -- "returns result → SUP1 re-evaluates" --> SUP1
+          SUP1 -- "validation_passed=True, decision=None\ncall_policy_agent" --> POL
+          POL -- "save checkpoint" --> CP_REDIS
+          POL -- "save checkpoint" --> CP_PG
+          POL -- "returns result → SUP1 re-evaluates" --> SUP1
+          SUP1 -- "decision set, request_saved≠True\ncall_communication_agent" --> COM
+          COM -- "save checkpoint" --> CP_REDIS
+          COM -- "save checkpoint" --> CP_PG
+          COM -- "returns result → SUP1 re-evaluates" --> SUP1
+          SUP1 -- "request_saved=True\nfinish_workflow" --> Q_DONE
+
+          POL -- "search_policies tool call" --> SEM_CACHE
+          SEM_CACHE -- "cache miss → embed + query" --> PINECONE
+          PINECONE -- "top-k policy docs" --> POL
+
+          POL -.->|"crash here"| CRASH_EVENT
+          CRASH_EVENT --> RESTART
+          RESTART --> RECOVER
+          RECOVER --> REINVOKE
+          REINVOKE --> CP_LOAD
+          CP_LOAD -->|"resume at policy\nvalidation already done" | POL
+
+          SUP1 -->|"hitl_required=True\n(set by any agent)" | HITL_NODE
+          SUP1 -->|"cycle_count &gt; 15" | HITL_NODE
+          SUP1 -->|"agent retries &gt; 3" | HITL_NODE
+          VAL -->|"ReactMaxIterationsError\nor parse error" | HITL_NODE
+          POL -->|"ReactMaxIterationsError\nor parse error" | HITL_NODE
+          COM -->|"DB failure\nor ReactMaxIterationsError" | HITL_NODE
+
+          VAL -.->|"LLM response"| OUTPUT_PARSE
+          POL -.->|"LLM response"| OUTPUT_PARSE
+          COM -.->|"LLM response"| OUTPUT_PARSE
+          OUTPUT_PARSE -.->|"AgentOutputParseError"| HITL_NODE
+
+          HITL_NODE --> HITL_STORE
+          HITL_STORE --> Q_DONE
+          HITL_STORE --> HITL_API
+          HITL_API --> HITL_RESOLVE
+          HITL_RESOLVE --> HITL_DENY
+          HITL_RESOLVE --> HITL_COMP
+          HITL_RESOLVE --> HITL_APPROVE
+          HITL_APPROVE -->|"re-runs with reset counters" | Q_ENQUEUE
+
+          Q_DONE --> REDIS_RESULT
+          Q_DONE --> TASK_RESULT_DB
+          Q_DONE --> IDEM_STATUS
+          Q_DONE -.->|"background task"| RAGAS
+          RAGAS -.->|"scores to LangSmith"| TASK_RESULT_DB
+          RAGAS -.->|"feeds into"| ABTEST
+          MF -.->|"serves LLM calls"| SUP1
+          MF -.->|"serves LLM calls"| VAL
+          MF -.->|"serves LLM calls"| POL
+          REDIS_RESULT --> GET_STATUS
+          TASK_RESULT_DB --> GET_STATUS
+          IDEM_STATUS --> GET_STATUS
+          GET_STATUS --> APPROVED
+          GET_STATUS --> DENIED
+          GET_STATUS --> FAILED
+          HITL_DENY --> TASK_RESULT_DB
+          HITL_COMP --> TASK_RESULT_DB
+          Q_CLEANUP -.->|"prunes stale entries" | Q_DONE
+
+          classDef crash fill:#ef4444,color:#fff,stroke:#b91c1c
+          classDef checkpoint fill:#3b82f6,color:#fff,stroke:#1d4ed8
+          classDef hitl fill:#ec4899,color:#fff,stroke:#be185d
+          classDef ok fill:#22c55e,color:#fff,stroke:#15803d
+          classDef denied fill:#dc2626,color:#fff,stroke:#991b1b
+          classDef warn fill:#f59e0b,color:#1a1a1a,stroke:#b45309
+          classDef queue fill:#8b5cf6,color:#fff,stroke:#6d28d9
+          classDef api fill:#0ea5e9,color:#fff,stroke:#0369a1
+          classDef dbfallback fill:#f97316,color:#fff,stroke:#c2410c
+          classDef result fill:#1e293b,color:#e2e8f0,stroke:#475569
+          classDef agent fill:#0f766e,color:#fff,stroke:#134e4a
+          classDef vector fill:#7c3aed,color:#fff,stroke:#5b21b6
+          classDef guard fill:#d97706,color:#fff,stroke:#92400e
+          classDef eval fill:#06b6d4,color:#fff,stroke:#0e7490
+          classDef resilience fill:#ef4444,color:#fff,stroke:#b91c1c
+
+          class CRASH_EVENT,RESTART,RECOVER,REINVOKE,CP_LOAD crash
+          class CP_REDIS,CP_PG,CP_LG checkpoint
+          class HITL_NODE,HITL_STORE,HITL_API,HITL_RESOLVE,HITL_DENY,HITL_COMP,HITL_APPROVE hitl
+          class APPROVED ok
+          class DENIED denied
+          class SUP1 warn
+          class Q_ENQUEUE,Q_PROCESSING,Q_DONE,Q_CLEANUP queue
+          class IDEM_KEY,REDIS_CHECK,REDIS_HIT,REDIS_WRITE,GEN_TASK api
+          class DB_CHECK,DB_HIT,DB_WRITE dbfallback
+          class REDIS_RESULT,TASK_RESULT_DB,IDEM_STATUS,GET_STATUS,FAILED result
+          class VAL,POL,COM agent
+          class PINECONE,SEM_CACHE vector
+          class SANITIZE,PII_MASK,OUTPUT_PARSE,REJECT,GUARD_RUNNER guard
+          class RAGAS,ABTEST eval
+          class CB,RB,MF resilience
+    </script>
+
+    <script>
+      const _raw = document.getElementById('diagram-def').textContent;
+      const DIAGRAM = _raw.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        flowchart: { useMaxWidth: false, htmlLabels: true },
+        securityLevel: 'loose'
+      });
+
+      (async () => {
+        try {
+          const { svg } = await mermaid.render('diagram-svg', DIAGRAM);
+          document.getElementById('mermaid-diagram').innerHTML = svg;
+        } catch (err) {
+          document.getElementById('mermaid-diagram').textContent = 'Diagram render error: ' + err.message;
+          console.error('Mermaid render error:', err);
+        }
+      })();
+
+      let currentScale = 1;
+      function zoom(factor) {
+        currentScale = Math.min(Math.max(currentScale * factor, 0.3), 3);
+        document.getElementById('zoomTarget').style.transform = `scale(${currentScale})`;
+      }
+      function resetZoom() {
+        currentScale = 1;
+        document.getElementById('zoomTarget').style.transform = 'scale(1)';
+      }
+      document.querySelector('.diagram-wrapper').addEventListener(
+        'wheel',
+        (e) => {
+          e.preventDefault();
+          zoom(e.deltaY < 0 ? 1.08 : 0.93);
+        },
+        { passive: false }
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2044 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warehouse Refund System — Interview Theory Guide</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1f2e;
+        --surface2: #232a3a;
+        --border: #2d3748;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #3b82f6;
+        --green: #22c55e;
+        --yellow: #f59e0b;
+        --red: #ef4444;
+        --pink: #ec4899;
+        --purple: #8b5cf6;
+        --teal: #14b8a6;
+        --orange: #f97316;
+        --cyan: #0ea5e9;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      /* NAV */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: #0c0f1a;
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        overflow-x: auto;
+      }
+      nav a {
+        color: var(--muted);
+        font-size: 0.78rem;
+        padding: 14px 14px;
+        white-space: nowrap;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      nav a:hover {
+        color: var(--text);
+        border-bottom-color: var(--accent);
+      }
+
+      /* LAYOUT */
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 24px;
+      }
+      .hero {
+        text-align: center;
+        margin-bottom: 64px;
+      }
+      .hero h1 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa, #34d399);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 12px;
+      }
+      .hero p {
+        color: var(--muted);
+        font-size: 1rem;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      .tag {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 4px 14px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      /* SECTIONS */
+      section {
+        margin-bottom: 72px;
+        scroll-margin-top: 70px;
+      }
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      h2::before {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 28px;
+        border-radius: 2px;
+        background: var(--accent);
+      }
+      h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 28px 0 12px;
+        color: #c7d4e8;
+      }
+      p {
+        margin-bottom: 14px;
+        color: var(--text);
+      }
+      ul,
+      ol {
+        padding-left: 22px;
+        margin-bottom: 14px;
+      }
+      li {
+        margin-bottom: 6px;
+        line-height: 1.6;
+      }
+
+      /* CARDS */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+      }
+      .card h3 {
+        margin-top: 0;
+      }
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+      .card.accent-blue {
+        border-left: 3px solid var(--accent);
+      }
+      .card.accent-green {
+        border-left: 3px solid var(--green);
+      }
+      .card.accent-yellow {
+        border-left: 3px solid var(--yellow);
+      }
+      .card.accent-red {
+        border-left: 3px solid var(--red);
+      }
+      .card.accent-pink {
+        border-left: 3px solid var(--pink);
+      }
+      .card.accent-purple {
+        border-left: 3px solid var(--purple);
+      }
+      .card.accent-teal {
+        border-left: 3px solid var(--teal);
+      }
+      .card.accent-orange {
+        border-left: 3px solid var(--orange);
+      }
+      .card.accent-cyan {
+        border-left: 3px solid var(--cyan);
+      }
+
+      /* CODE */
+      pre {
+        background: #0c1020;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 18px;
+        overflow-x: auto;
+        font-size: 0.82rem;
+        line-height: 1.6;
+        margin-bottom: 16px;
+        font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      }
+      code {
+        background: #1e2a3a;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.85em;
+        font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+        color: #93c5fd;
+      }
+
+      /* FLOW STEPS */
+      .flow {
+        counter-reset: step;
+      }
+      .flow-step {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .flow-step::before {
+        counter-increment: step;
+        content: counter(step);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .flow-step .step-body h4 {
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+      }
+      .flow-step .step-body p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      /* TABLE */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-size: 0.87rem;
+      }
+      th {
+        background: var(--surface2);
+        text-align: left;
+        padding: 10px 14px;
+        border-bottom: 2px solid var(--border);
+        font-weight: 600;
+      }
+      td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Q&A */
+      .qa {
+        margin-bottom: 28px;
+      }
+      .qa-q {
+        background: var(--surface2);
+        border-left: 3px solid var(--yellow);
+        border-radius: 0 8px 8px 0;
+        padding: 12px 16px;
+        font-weight: 600;
+        margin-bottom: 0;
+        cursor: pointer;
+      }
+      .qa-a {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 16px;
+        display: none;
+      }
+      .qa-a.open {
+        display: block;
+      }
+      .qa-q::before {
+        content: '▶ ';
+        font-size: 0.7em;
+        color: var(--yellow);
+      }
+      .qa-q.active::before {
+        content: '▼ ';
+      }
+
+      /* BADGES */
+      .badge {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: 12px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        margin-right: 4px;
+        margin-bottom: 4px;
+      }
+      .badge-blue {
+        background: #1d4ed8;
+        color: #bfdbfe;
+      }
+      .badge-green {
+        background: #15803d;
+        color: #bbf7d0;
+      }
+      .badge-yellow {
+        background: #92400e;
+        color: #fef3c7;
+      }
+      .badge-red {
+        background: #991b1b;
+        color: #fecaca;
+      }
+      .badge-purple {
+        background: #5b21b6;
+        color: #ede9fe;
+      }
+      .badge-teal {
+        background: #0f766e;
+        color: #99f6e4;
+      }
+      .badge-pink {
+        background: #9d174d;
+        color: #fce7f3;
+      }
+      .badge-orange {
+        background: #9a3412;
+        color: #fed7aa;
+      }
+
+      /* HIGHLIGHT BOX */
+      .highlight {
+        background: #132038;
+        border: 1px solid #1e4067;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+      }
+      .highlight.warn {
+        background: #2d1b00;
+        border-color: #78350f;
+      }
+      .highlight.success {
+        background: #052e16;
+        border-color: #166534;
+      }
+      .highlight.danger {
+        background: #2d0000;
+        border-color: #7f1d1d;
+      }
+
+      /* DIVIDER */
+      hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 40px 0;
+      }
+
+      /* BACK TO TOP */
+      .back-top {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#stack">Tech Stack</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#flow">Full Flow</a>
+      <a href="#agents">Agents</a>
+      <a href="#react">ReAct Loop</a>
+      <a href="#idempotency">Idempotency</a>
+      <a href="#checkpointing">Checkpointing</a>
+      <a href="#crash">Crash Recovery</a>
+      <a href="#hitl">HITL</a>
+      <a href="#results">Result Storage</a>
+      <a href="#vector">Vector Search</a>
+      <a href="#telemetry">Telemetry</a>
+      <a href="#security">Guardrails</a>
+      <a href="#evaluation">RAGAS Evaluation</a>
+      <a href="#resilience">Resilience</a>
+      <a href="#abtesting">A/B Testing</a>
+      <a href="#patterns">Design Patterns</a>
+      <a href="#qa">Interview Q&amp;A</a>
+    </nav>
+
+    <div class="container">
+      <div class="hero">
+        <h1>🏭 Warehouse Refund Processing System</h1>
+        <p>
+          A production-grade, multi-agent AI system built with LangGraph, FastAPI, and Groq LLMs to autonomously process
+          warehouse refund requests with full crash recovery, human oversight, and audit compliance.
+        </p>
+        <div class="tag-row">
+          <span class="tag">LangGraph</span><span class="tag">FastAPI</span><span class="tag">LangChain</span>
+          <span class="tag">Groq LLM (Llama-3.1-8b)</span><span class="tag">Redis</span
+          ><span class="tag">PostgreSQL</span> <span class="tag">Pinecone</span><span class="tag">OpenTelemetry</span
+          ><span class="tag">LangSmith</span> <span class="tag">SQLAlchemy</span><span class="tag">Streamlit</span
+          ><span class="tag">Docker</span>
+        </div>
+      </div>
+
+      <!-- ── OVERVIEW ── -->
+      <section id="overview">
+        <h2>System Overview</h2>
+        <p>
+          This system automates warehouse refund processing using a <strong>multi-agent AI workflow</strong>. When a
+          customer submits a refund request via REST API, the system orchestrates three specialized AI agents —
+          Validation, Policy, and Communication — each powered by a Groq LLM using the
+          <strong>ReAct (Reasoning + Acting)</strong> pattern with database and vector tools.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-green">
+            <h3>🎯 Purpose</h3>
+            <p>
+              Automate warehouse refund decisions: validate customer/order data, check warehouse return policies,
+              calculate refund amounts by tier, persist decisions, and route ambiguous cases to human review.
+            </p>
+          </div>
+          <div class="card accent-blue">
+            <h3>🏗️ Core Architecture</h3>
+            <p>
+              Supervisor-pattern multi-agent LangGraph workflow. A supervisor LLM routes between agents. Each agent uses
+              ReAct to call tools in parallel waves. Checkpoints survive crashes.
+            </p>
+          </div>
+          <div class="card accent-yellow">
+            <h3>⚡ Key Properties</h3>
+            <ul>
+              <li>Async throughout (FastAPI + asyncio)</li>
+              <li>Idempotent: duplicate requests safely detected</li>
+              <li>Crash-safe: tasks resume from last checkpoint</li>
+              <li>HITL: escalates to human when AI is unsure</li>
+              <li>Full audit trail + telemetry</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── TECH STACK ── -->
+      <section id="stack">
+        <h2>Technology Stack</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th>Technology</th>
+              <th>Role in System</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>API Framework</strong></td>
+              <td>FastAPI (async)</td>
+              <td>REST API, background tasks, startup/shutdown hooks</td>
+            </tr>
+            <tr>
+              <td><strong>Workflow Engine</strong></td>
+              <td>LangGraph (StateGraph)</td>
+              <td>Directed graph with conditional edges; supervisor + 3 agent nodes</td>
+            </tr>
+            <tr>
+              <td><strong>LLM</strong></td>
+              <td>Groq — Llama-3.1-8b-instant</td>
+              <td>Powers supervisor routing and all 3 ReAct agents</td>
+            </tr>
+            <tr>
+              <td><strong>LLM Framework</strong></td>
+              <td>LangChain (langchain-groq)</td>
+              <td>Tool binding, message types (SystemMessage, HumanMessage, ToolMessage, AIMessage)</td>
+            </tr>
+            <tr>
+              <td><strong>Cache / Queue</strong></td>
+              <td>Redis (asyncio client)</td>
+              <td>Idempotency cache, task queue, agent checkpoints, semantic cache</td>
+            </tr>
+            <tr>
+              <td><strong>Database</strong></td>
+              <td>PostgreSQL (asyncpg + SQLAlchemy async)</td>
+              <td>All persistent storage: customers, orders, refunds, HITL tasks, checkpoints, audit logs</td>
+            </tr>
+            <tr>
+              <td><strong>Vector Store</strong></td>
+              <td>Pinecone (serverless)</td>
+              <td>Semantic search over warehouse policy documents</td>
+            </tr>
+            <tr>
+              <td><strong>Embeddings</strong></td>
+              <td>HuggingFace all-MiniLM-L6-v2</td>
+              <td>384-dim sentence embeddings for policy search</td>
+            </tr>
+            <tr>
+              <td><strong>LangGraph Checkpoint</strong></td>
+              <td>AsyncPostgresSaver</td>
+              <td>LangGraph's own internal snapshot store (separate from custom checkpoints)</td>
+            </tr>
+            <tr>
+              <td><strong>Observability</strong></td>
+              <td>OpenTelemetry + LangSmith</td>
+              <td>Distributed traces, spans per agent/tool, OTLP export to LangSmith</td>
+            </tr>
+            <tr>
+              <td><strong>Input/Output Guards</strong></td>
+              <td>guardrails-ai</td>
+              <td>Custom validators for refund reason, policy decision, and amount bounds; Guard runner with LangSmith tracing</td>
+            </tr>
+            <tr>
+              <td><strong>Evaluation</strong></td>
+              <td>RAGAS</td>
+              <td>Parallel evaluation of faithfulness, answer relevancy, context precision, and context recall</td>
+            </tr>
+            <tr>
+              <td><strong>Resilience</strong></td>
+              <td>Circuit Breaker + Retry Budget + Model Fallback</td>
+              <td>Cascading failure prevention; automatic LLM provider failover with budget-limited retries</td>
+            </tr>
+            <tr>
+              <td><strong>A/B Testing</strong></td>
+              <td>Custom (evaluation/ab_testing.py)</td>
+              <td>Prompt variant experiments with deterministic assignment, traffic splitting, Welch's t-test</td>
+            </tr>
+            <tr>
+              <td><strong>Testing</strong></td>
+              <td>pytest + pytest-asyncio</td>
+              <td>Unit tests for guardrails, resilience, A/B testing, output parsing (68 tests)</td>
+            </tr>
+            <tr>
+              <td><strong>Structured Logging</strong></td>
+              <td>structlog</td>
+              <td>JSON-formatted logs with context vars (task_id, order_id) bound per async task</td>
+            </tr>
+            <tr>
+              <td><strong>UI</strong></td>
+              <td>Streamlit</td>
+              <td>Dashboard: submit refunds, manage prompts, view analytics, audit logs</td>
+            </tr>
+            <tr>
+              <td><strong>Infrastructure</strong></td>
+              <td>Docker Compose</td>
+              <td>Orchestrates FastAPI + Redis + PostgreSQL services</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ── ARCHITECTURE ── -->
+      <section id="architecture">
+        <h2>System Architecture</h2>
+
+        <h3>Supervisor-Pattern Multi-Agent Design</h3>
+        <p>
+          The workflow is a <strong>directed state graph</strong> (LangGraph <code>StateGraph</code>) with a central
+          supervisor that uses LLM tool-calling to decide which agent runs next. There is no hardcoded routing logic —
+          the LLM reasons from the current state fields.
+        </p>
+
+        <div class="card accent-blue">
+          <h3>LangGraph Graph Topology</h3>
+          <pre>
+START → supervisor → [validation | policy | communication | hitl]
+         ↑___________↙ (agents return to supervisor after each step)
+         hitl → END</pre
+          >
+          <p>
+            Every agent node feeds back to the supervisor. The supervisor re-evaluates state after each step and calls
+            exactly one routing tool to express its next decision.
+          </p>
+        </div>
+
+        <h3>RefundState — Shared Workflow State</h3>
+        <p>
+          All agents read from and write into a <code>RefundState</code> TypedDict. LangGraph merges each agent's
+          returned dict back into the shared state using <code>operator.add</code> for message lists.
+        </p>
+
+        <div class="card accent-teal">
+          <h3>Key State Fields</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th>Set By</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>validation_passed</code></td>
+                <td>Validation Agent</td>
+                <td>Supervisor routing pivot: None→validate, False→end, True→policy</td>
+              </tr>
+              <tr>
+                <td><code>decision</code></td>
+                <td>Policy Agent</td>
+                <td>"approved" or "denied" — pivot for communication routing</td>
+              </tr>
+              <tr>
+                <td><code>request_saved</code></td>
+                <td>Communication Agent</td>
+                <td>True when all DB writes done → supervisor calls finish_workflow</td>
+              </tr>
+              <tr>
+                <td><code>hitl_required</code></td>
+                <td>Any agent / Supervisor</td>
+                <td>Supervisor sees this first; bypasses normal routing → HITL node</td>
+              </tr>
+              <tr>
+                <td><code>cycle_count</code></td>
+                <td>Supervisor</td>
+                <td>Incremented each pass; cap at 15 → auto-HITL</td>
+              </tr>
+              <tr>
+                <td><code>agent_retry_counts</code></td>
+                <td>Supervisor</td>
+                <td>Per-agent counter; cap at 3 → auto-HITL</td>
+              </tr>
+              <tr>
+                <td><code>thread_id</code></td>
+                <td>main.py</td>
+                <td>UUID of the task; used as LangGraph config key and checkpoint key</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Checkpoint-Aware Node Wrappers</h3>
+        <p>
+          Each agent node is wrapped in a thin async function (<code>_validation_node</code>, <code>_policy_node</code>,
+          <code>_communication_node</code>) that calls the real agent, then calls <code>_save()</code> to persist a
+          checkpoint to Redis + PostgreSQL. This is separate from LangGraph's own internal checkpointer.
+        </p>
+      </section>
+
+      <!-- ── FULL FLOW ── -->
+      <section id="flow">
+        <h2>Complete Request Lifecycle (Happy Path)</h2>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Client sends POST /refund</h4>
+              <p>
+                Payload: <code>customer_email</code>, <code>order_id</code>, <code>refund_reason</code>, optional
+                <code>idempotency_key</code>
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Idempotency check (dual-layer)</h4>
+              <p>
+                Compute key = client key or sha256(email:order:reason). Check Redis first (&lt;1ms). If miss, check
+                PostgreSQL IdempotencyRecord. If both miss → new request.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Write IdempotencyRecord to DB + cache in Redis</h4>
+              <p>
+                DB write is first (durable). IntegrityError on race condition safely handled. Then Redis cache set with
+                24h TTL.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Enqueue task in Redis persistent queue</h4>
+              <p>
+                HSET the payload to <code>refund:tasks</code> hash; SADD task_id to
+                <code>refund:tasks:pending</code> set. This enables crash recovery on restart.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Return task_id immediately to client</h4>
+              <p>
+                API returns <code>{"task_id": "...", "status": "processing"}</code>. Client polls GET /refund/{task_id}.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>FastAPI BackgroundTask runs _process_refund()</h4>
+              <p>
+                Marks queue entry as "processing". Binds task_id + order_id to structlog context vars for all log lines.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>LangGraph workflow starts: Supervisor → Validation Agent</h4>
+              <p>
+                Supervisor LLM sees <code>validation_passed=None</code>, calls <code>call_validation_agent</code> tool.
+                Validation agent runs ReAct loop: Wave 0 (lookup_customer + get_order_details in parallel) → Wave 1
+                (get_customer_analytics + verify_order_ownership in parallel). Returns structured JSON decision.
+                Checkpoint saved to Redis + PG.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Supervisor → Policy Agent</h4>
+              <p>
+                Supervisor sees <code>validation_passed=True, decision=None</code>, calls
+                <code>call_policy_agent</code>. Policy agent runs 7-tool Wave 0 (search_policies, check_refund_history,
+                check_eligibility, get_product_return_policy, get_customer_order_summary, get_refund_rate_by_category,
+                get_similar_refund_decisions) then Wave 1 (calculate_refund — needs eligibility result). search_policies
+                hits Pinecone via semantic cache. Returns approved/denied decision with refund amount. Checkpoint saved.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Supervisor → Communication Agent</h4>
+              <p>
+                Supervisor sees <code>decision set, request_saved≠True</code>, calls
+                <code>call_communication_agent</code>. All 4 tools run in parallel (single wave): save_processed_request
+                (upsert + dedup), update_customer_analytics (idempotent per refund_request_id),
+                update_refund_request_status, log_audit_event. Returns JSON with all flags true. Checkpoint saved.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Supervisor calls finish_workflow</h4>
+              <p>Sees <code>request_saved=True</code>. Returns "end". LangGraph routes to END.</p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Results written to 3-layer storage</h4>
+              <p>
+                Redis: full JSON with TTL 1h. PostgreSQL TaskResult: permanent record. IdempotencyRecord status:
+                "completed". Queue entry: removed from pending set. Checkpoint deleted (no longer needed).
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="step-body">
+              <h4>Client polls GET /refund/{task_id}</h4>
+              <p>
+                Redis hit → full result returned instantly. If Redis TTL expired → TaskResult DB. If not found there →
+                IdempotencyRecord status. Final fallback: not_found.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── AGENTS ── -->
+      <section id="agents">
+        <h2>Agent Deep Dive</h2>
+
+        <div class="card accent-yellow">
+          <h3>🔀 Supervisor Agent</h3>
+          <p><strong>Role:</strong> Orchestrator. Decides which agent to call next based on current state.</p>
+          <p>
+            <strong>How:</strong> Uses LLM with <code>tool_choice="any"</code> bound to 4 routing tools. The LLM
+            <em>must</em> call exactly one tool per turn.
+          </p>
+          <p><strong>Guards (checked before LLM call):</strong></p>
+          <ul>
+            <li><code>hitl_required=True</code> in state → immediately route to HITL (no LLM call needed)</li>
+            <li><code>cycle_count > MAX_CYCLES (15)</code> → route to HITL with reason "cycle limit exceeded"</li>
+            <li>Per-agent retry count > MAX_RETRIES (3) → route to HITL with reason "retry_exhausted:agent"</li>
+            <li>LLM itself throws an error → route to HITL</li>
+          </ul>
+          <p><strong>Routing tools:</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Called When</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>call_validation_agent</code></td>
+                <td><code>validation_passed is None</code></td>
+              </tr>
+              <tr>
+                <td><code>call_policy_agent</code></td>
+                <td><code>validation_passed=True AND decision is None</code></td>
+              </tr>
+              <tr>
+                <td><code>call_communication_agent</code></td>
+                <td><code>decision is set AND request_saved ≠ True</code></td>
+              </tr>
+              <tr>
+                <td><code>finish_workflow</code></td>
+                <td><code>validation_passed=False OR request_saved=True</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card accent-green">
+          <h3>✅ Validation Agent</h3>
+          <p><strong>Role:</strong> Verifies customer identity, account standing, and order legitimacy.</p>
+          <p><strong>Tools (parallel wave execution):</strong></p>
+          <ul>
+            <li>
+              <strong>Wave 0 (parallel):</strong> <code>lookup_customer(email)</code> +
+              <code>get_order_details(order_id)</code>
+            </li>
+            <li>
+              <strong>Wave 1 (parallel):</strong> <code>get_customer_analytics(customer_id)</code> +
+              <code>verify_order_ownership(order_id, customer_id)</code>
+            </li>
+          </ul>
+          <p><strong>Business rules checked:</strong></p>
+          <ul>
+            <li>Customer exists (found=True)</li>
+            <li>Account status is "active"</li>
+            <li>Order exists (found=True)</li>
+            <li>Order belongs to customer (ownership.valid=True)</li>
+            <li>Order status is "delivered"</li>
+            <li>Risk score from analytics &lt; 0.8</li>
+          </ul>
+          <p>
+            <strong>Failure handling:</strong> ReactMaxIterationsError or JSON parse error → sets
+            <code>hitl_required=True</code>.
+          </p>
+        </div>
+
+        <div class="card accent-teal">
+          <h3>📋 Policy Agent</h3>
+          <p>
+            <strong>Role:</strong> Determines refund eligibility and calculates the exact refund amount based on
+            warehouse policies.
+          </p>
+          <p><strong>Tools:</strong></p>
+          <ul>
+            <li>
+              <strong>Wave 0 (7 tools in parallel):</strong> <code>search_policies</code> (Pinecone vector search),
+              <code>check_refund_history</code>, <code>check_eligibility</code>, <code>get_product_return_policy</code>,
+              <code>get_customer_order_summary</code>, <code>get_refund_rate_by_category</code>,
+              <code>get_similar_refund_decisions</code>
+            </li>
+            <li>
+              <strong>Wave 1:</strong> <code>calculate_refund</code> (depends on check_eligibility output as
+              <code>eligibility_result</code> param)
+            </li>
+          </ul>
+          <p><strong>Tier rules:</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>Tier</th>
+                <th>Window Extension</th>
+                <th>Restocking Fee</th>
+                <th>Max Refunds/Year</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Gold</td>
+                <td>+15 days</td>
+                <td>Fully waived</td>
+                <td>5</td>
+              </tr>
+              <tr>
+                <td>Silver</td>
+                <td>+7 days</td>
+                <td>50% waived</td>
+                <td>3</td>
+              </tr>
+              <tr>
+                <td>Bronze</td>
+                <td>None</td>
+                <td>Full fee applies</td>
+                <td>2</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <strong>Warehouse category policies:</strong> electronics (15d, 15% fee), industrial_equipment (60d, 10%
+            fee), raw_materials (30d, 5%), chemicals (7d, 20%), food_perishables (3d, 0%), packaging (30d, 5%),
+            furniture (30d, 10%)
+          </p>
+        </div>
+
+        <div class="card accent-purple">
+          <h3>💾 Communication Agent</h3>
+          <p>
+            <strong>Role:</strong> Persists the final decision and updates all related records for audit compliance.
+          </p>
+          <p><strong>Tools (all parallel — single wave):</strong></p>
+          <ul>
+            <li>
+              <code>save_processed_request</code> — upsert to processed_requests table; dedup via SAVEPOINT guard on
+              refund_request_id unique constraint
+            </li>
+            <li>
+              <code>update_customer_analytics</code> — recalculates risk_score, refund_rate, total_spent; idempotent per
+              refund_request_id (checks analytics_updated flag)
+            </li>
+            <li><code>update_refund_request_status</code> — updates status on original refund_requests row</li>
+            <li><code>log_audit_event</code> — inserts audit_logs row for compliance</li>
+          </ul>
+          <p>
+            <strong>On DB failure:</strong> sets <code>hitl_required=True</code> so a human can retry or compensate.
+            Does NOT set <code>request_saved=True</code> — prevents supervisor from marking workflow done when data
+            wasn't persisted.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── REACT LOOP ── -->
+      <section id="react">
+        <h2>ReAct Pattern with Parallel Wave Execution</h2>
+        <p>
+          The custom ReAct engine in <code>agents/react_loop.py</code> goes beyond standard sequential tool execution.
+          It uses a <strong>topological wave sort</strong> to run independent tools in parallel.
+        </p>
+
+        <div class="card accent-cyan">
+          <h3>How the ReAct Loop Works</h3>
+          <ol>
+            <li>LLM called with system prompt + current messages</li>
+            <li>If LLM returns no tool calls → it's the final answer, return response content</li>
+            <li>If LLM returns tool calls → compute execution waves using dependency map</li>
+            <li>Execute <strong>only Wave 0</strong> in parallel using <code>asyncio.gather()</code></li>
+            <li>
+              If LLM smuggled dependent tools into Wave 0, trim the AIMessage to only Wave 0 calls (prevents dangling
+              tool_call_id errors)
+            </li>
+            <li>Append ToolMessage results to message history</li>
+            <li>Loop: LLM sees tool results, generates next iteration (may call Wave 1 tools)</li>
+            <li>Repeat until final text response or max_iterations (8) hit</li>
+          </ol>
+        </div>
+
+        <h3>Dependency Map Example (Validation Agent)</h3>
+        <pre>
+VALIDATION_DEPS = {
+    "lookup_customer":        [],            # Wave 0 — no deps
+    "get_order_details":      [],            # Wave 0 — no deps
+    "get_customer_analytics": ["lookup_customer"],  # Wave 1 — needs customer_id
+    "verify_order_ownership": ["lookup_customer"],  # Wave 1 — needs customer_id
+}</pre
+        >
+        <p>
+          Wave 0 runs <code>lookup_customer</code> and <code>get_order_details</code> simultaneously. The LLM then sees
+          both results and calls <code>get_customer_analytics</code> and <code>verify_order_ownership</code> with the
+          now-known customer_id. Wave 1 also runs them in parallel.
+        </p>
+
+        <h3>Why Only Execute Wave 0 Per LLM Turn?</h3>
+        <div class="highlight warn">
+          <p>
+            If the LLM decides to batch Wave 0 + Wave 1 tools in a single response (it shouldn't, but might), executing
+            dependent tools immediately would cause <strong>hallucinated arguments</strong> — the LLM can't know
+            customer_id before lookup_customer returns. We trim to Wave 0 only and let the next LLM iteration generate
+            Wave 1 with real values.
+          </p>
+        </div>
+
+        <h3>ReactMaxIterationsError → HITL Escalation</h3>
+        <p>
+          If the loop exhausts <code>max_iterations=8</code> without a final answer, it raises
+          <code>ReactMaxIterationsError</code>. Each agent catches this and returns <code>hitl_required=True</code> with
+          reason <code>"react_max_iter:{agent}"</code>.
+        </p>
+      </section>
+
+      <!-- ── IDEMPOTENCY ── -->
+      <section id="idempotency">
+        <h2>Dual-Layer Idempotency</h2>
+        <p>Prevents duplicate processing of the same refund request, even across server restarts or Redis flushes.</p>
+
+        <div class="card-grid">
+          <div class="card accent-cyan">
+            <h3>Layer 1: Redis (sub-millisecond)</h3>
+            <p>Key: <code>idempotency:{sha256(email:order:reason)}</code><br />Value: task_id<br />TTL: 24 hours</p>
+            <p>Fast path. Checked on every POST /refund before any DB access.</p>
+          </div>
+          <div class="card accent-orange">
+            <h3>Layer 2: PostgreSQL IdempotencyRecord</h3>
+            <p>Table: <code>idempotency_records</code> with unique constraint on <code>idempotency_key</code>.</p>
+            <p>Guard against Redis flush/restart. Also catches race conditions via IntegrityError handling.</p>
+          </div>
+        </div>
+
+        <h3>Race Condition Handling</h3>
+        <div class="highlight">
+          <p>
+            Two simultaneous identical requests can both pass the Redis check (cache miss) and race to write the DB. The
+            <code>IntegrityError</code> on the unique constraint is caught, the losing request rolls back, then reads
+            the winner's task_id and returns it as "duplicate". This is the correct CRDT-style pattern.
+          </p>
+        </div>
+
+        <h3>Idempotency Key Sources</h3>
+        <ul>
+          <li>
+            <strong>Client-supplied:</strong> <code>idempotency_key</code> field in request body — client controls dedup
+            window
+          </li>
+          <li><strong>Server-derived:</strong> sha256 of <code>email:order_id:reason</code> — content-based dedup</li>
+        </ul>
+      </section>
+
+      <!-- ── CHECKPOINTING ── -->
+      <section id="checkpointing">
+        <h2>Dual-Layer Checkpointing</h2>
+        <p>
+          After every agent node completes, the full workflow state is saved to two stores. This enables crash recovery
+          without re-running already-completed agents.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-blue">
+            <h3>Custom Checkpoint Store (checkpoint/store.py)</h3>
+            <p>
+              <strong>Redis:</strong> <code>wf_checkpoint:{thread_id}</code> → JSON payload with full state (messages
+              excluded — not JSON-safe). TTL 24h. Fast path for recovery.
+            </p>
+            <p>
+              <strong>PostgreSQL:</strong> <code>workflow_checkpoints</code> table, upsert on thread_id. Permanent,
+              survives Redis flush. Used as cold-start fallback.
+            </p>
+            <p>
+              Both writes are <strong>best-effort</strong> — failure logs a warning but never disrupts the workflow.
+            </p>
+          </div>
+          <div class="card accent-purple">
+            <h3>LangGraph Internal Checkpoint (AsyncPostgresSaver)</h3>
+            <p>
+              LangGraph's own checkpointer uses a separate PostgreSQL connection. Activated by passing
+              <code>configurable: {thread_id}</code> in the graph config.
+            </p>
+            <p>This stores the full LangGraph graph snapshot including message history, allowing mid-node resume.</p>
+            <p>
+              On HITL approve, this checkpoint is explicitly <strong>deleted</strong> before re-running, so the workflow
+              starts fresh with reset state rather than resuming from the stale HITL-triggering state.
+            </p>
+          </div>
+        </div>
+
+        <h3>State Serialization</h3>
+        <p>
+          The <code>_serialize_state()</code> function strips the <code>messages</code> field (contains LangChain
+          BaseMessage objects that aren't JSON-serializable) before saving. On restore, messages are reconstructed from
+          scratch.
+        </p>
+
+        <h3>Checkpoint Deletion on Success</h3>
+        <p>
+          Once <code>request_saved=True</code> or <code>compensated=True</code> and <code>hitl_required</code> is not
+          set, the checkpoint is deleted from both Redis and PostgreSQL. This prevents a stale checkpoint from being
+          incorrectly resumed if the thread_id were ever reused.
+        </p>
+      </section>
+
+      <!-- ── CRASH RECOVERY ── -->
+      <section id="crash">
+        <h2>Crash Recovery</h2>
+        <p>
+          If the server process is killed mid-workflow, the task queue in Redis preserves all in-progress tasks. On
+          restart, the <code>startup()</code> hook automatically recovers them.
+        </p>
+
+        <div class="card accent-red">
+          <h3>Recovery Flow</h3>
+          <ol>
+            <li>
+              <code>task_queue.get_incomplete_tasks()</code> reads all task_ids from
+              <code>refund:tasks:pending</code> set
+            </li>
+            <li>Skip tasks with <code>status=hitl_pending</code> — these need human action, not auto-restart</li>
+            <li>For each recoverable task: <code>asyncio.create_task(_recover_task(payload))</code></li>
+            <li><code>_recover_task</code> wraps <code>_process_refund</code> with exception logging</li>
+            <li><code>_process_refund</code> calls <code>run_workflow(thread_id=task_id)</code></li>
+            <li>
+              <code>run_workflow</code> calls <code>load_checkpoint(redis, thread_id)</code>
+              <ul>
+                <li>Redis hit → loads last state, injects as <code>initial_state</code></li>
+                <li>Redis miss → PostgreSQL fallback via <code>WorkflowCheckpoint</code> table</li>
+              </ul>
+            </li>
+            <li>
+              LangGraph supervisor receives injected state. Already-set fields (<code>validation_passed=True</code>,
+              <code>decision="approved"</code>, etc.) cause the LLM to route directly to the next incomplete agent
+            </li>
+          </ol>
+        </div>
+
+        <div class="highlight success">
+          <p>
+            <strong>Key insight:</strong> Recovery works because the supervisor's routing rules are purely state-driven.
+            Injecting the recovered state is equivalent to telling the supervisor "these agents already ran — what's
+            next?" The supervisor LLM naturally skips completed work.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── HITL ── -->
+      <section id="hitl">
+        <h2>Human-In-The-Loop (HITL)</h2>
+        <p>
+          When the AI system cannot safely resolve a request, it escalates to human review. This covers edge cases,
+          errors, and situations requiring judgment beyond configured rules.
+        </p>
+
+        <h3>HITL Triggers</h3>
+        <ul>
+          <li>
+            <span class="badge badge-yellow">Supervisor</span> <code>cycle_count &gt; 15</code> — workflow looping
+            without progress
+          </li>
+          <li>
+            <span class="badge badge-yellow">Supervisor</span> Agent retry count <code>&gt; 3</code> for any single
+            agent
+          </li>
+          <li><span class="badge badge-yellow">Supervisor</span> LLM call itself throws an exception</li>
+          <li>
+            <span class="badge badge-green">Validation</span> <code>ReactMaxIterationsError</code> (tools not
+            converging) or JSON parse error
+          </li>
+          <li><span class="badge badge-teal">Policy</span> <code>ReactMaxIterationsError</code> or JSON parse error</li>
+          <li>
+            <span class="badge badge-purple">Communication</span> DB write failure or
+            <code>ReactMaxIterationsError</code>
+          </li>
+        </ul>
+
+        <h3>HITL Node Behavior</h3>
+        <div class="card accent-pink">
+          <ul>
+            <li>Upserts a <code>HITLTask</code> row to PostgreSQL with full <code>state_json</code> snapshot</li>
+            <li>Sets <code>request_saved=True</code> to prevent the supervisor from looping (workflow ends)</li>
+            <li>Keeps the LangGraph checkpoint — needed if a human approves and re-runs</li>
+            <li>Stores result in Redis (24h TTL) and TaskResult table (permanent)</li>
+          </ul>
+        </div>
+
+        <h3>Human Resolution Actions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>What Happens</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>approve</code></td>
+              <td>
+                Load <code>HITLTask.state_json</code>. Reset <code>cycle_count=0</code>,
+                <code>agent_retry_counts={}</code>, <code>hitl_required=None</code>, <code>request_saved=None</code>.
+                Delete stale LangGraph PG checkpoint. Re-enqueue task. Re-run <code>_process_refund</code> with
+                recovered state via background task.
+              </td>
+            </tr>
+            <tr>
+              <td><code>deny</code></td>
+              <td>
+                Write <code>decision=denied, refund_amount=0</code> directly to Redis + TaskResult DB. Update
+                IdempotencyRecord + HITLTask. No re-run.
+              </td>
+            </tr>
+            <tr>
+              <td><code>compensate</code></td>
+              <td>
+                Write <code>decision=denied, refund_amount=0, compensated=true</code>. Same storage writes. Used when
+                the error itself justifies giving the customer something (handled manually).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>HITL API Endpoints</h3>
+        <ul>
+          <li>
+            <code>GET /hitl/tasks?status=pending</code> — list all tasks needing review, includes full state snapshot
+          </li>
+          <li><code>POST /hitl/tasks/{task_id}/resolve</code> — resolve with action + optional note and resolved_by</li>
+        </ul>
+      </section>
+
+      <!-- ── RESULT STORAGE ── -->
+      <section id="results">
+        <h2>3-Layer Result Storage</h2>
+        <p>
+          Results are stored in three places with different durability/speed trade-offs.
+          <code>GET /refund/{task_id}</code> tries them in priority order.
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Store</th>
+              <th>TTL</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1 (fastest)</strong></td>
+              <td>Redis <code>task:{task_id}</code></td>
+              <td>1h (success) / 24h (HITL)</td>
+              <td>Normal result polling; sub-millisecond reads</td>
+            </tr>
+            <tr>
+              <td><strong>2 (permanent)</strong></td>
+              <td>PostgreSQL <code>task_results</code></td>
+              <td>Forever</td>
+              <td>After Redis TTL expires; includes full decision details; <code>source: "db"</code></td>
+            </tr>
+            <tr>
+              <td><strong>3 (status only)</strong></td>
+              <td>PostgreSQL <code>idempotency_records</code></td>
+              <td>Forever</td>
+              <td>Minimal status when TaskResult not yet written; <code>source: "idempotency_db"</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="highlight">
+          <p>
+            The TaskResult table was specifically added because Redis TTL of 1h is too short for clients that poll hours
+            later. It persists the complete decision record permanently.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── VECTOR SEARCH ── -->
+      <section id="vector">
+        <h2>Vector Policy Search (Pinecone)</h2>
+        <p>
+          The Policy Agent's <code>search_policies</code> tool uses semantic similarity to find relevant warehouse
+          return policy documents, rather than exact keyword matching.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-purple">
+            <h3>Pinecone Setup</h3>
+            <ul>
+              <li>Index: <code>warehouse-refund-policies</code> (serverless, AWS us-east-1)</li>
+              <li>Dimensions: 384 (all-MiniLM-L6-v2)</li>
+              <li>Metric: cosine similarity</li>
+              <li>
+                8 policy documents indexed: general, electronics, furniture, gold/silver/bronze tiers, fraud policy,
+                eligibility policy
+              </li>
+              <li>Index built at startup via <code>build_policy_index()</code></li>
+            </ul>
+          </div>
+          <div class="card accent-blue">
+            <h3>Semantic Cache Layer</h3>
+            <p>
+              Before hitting Pinecone, queries are checked against a Redis semantic cache. The same (or semantically
+              similar) query reuses cached embedding results, reducing latency and Pinecone API calls.
+            </p>
+            <p>Cache: query string → policy docs JSON, stored in Redis.</p>
+          </div>
+        </div>
+
+        <h3>Why Vector Search for Policies?</h3>
+        <p>
+          Policy queries from the LLM are natural language (e.g., "What is the return window for damaged industrial
+          equipment for gold tier?"). Exact keyword matching would miss semantically equivalent phrasings. Vector
+          similarity returns the most contextually relevant policy documents regardless of wording.
+        </p>
+      </section>
+
+      <!-- ── TELEMETRY ── -->
+      <section id="telemetry">
+        <h2>Observability &amp; Telemetry</h2>
+
+        <div class="card-grid">
+          <div class="card accent-blue">
+            <h3>OpenTelemetry Traces</h3>
+            <p>
+              Every agent node and key operation is wrapped in an OTel span. Spans export to LangSmith via OTLP HTTP.
+            </p>
+            <ul>
+              <li><code>warehouse_refund_workflow</code> — root span</li>
+              <li>
+                <code>supervisor_node</code>, <code>validation_agent</code>, <code>policy_agent</code>,
+                <code>communication_agent</code>
+              </li>
+              <li>
+                Span attributes: agent name, cycle count, retry counts, decision, refund amount, customer email (masked)
+              </li>
+              <li><code>langsmith.span.kind: "chain"</code> tells LangSmith to show these as chain spans</li>
+            </ul>
+          </div>
+          <div class="card accent-teal">
+            <h3>Structured Logging (structlog)</h3>
+            <p>JSON-formatted logs with context variables bound per async task:</p>
+            <pre>
+structlog.contextvars.bind_contextvars(
+    task_id=task_id,
+    order_id=order_id,
+)</pre
+            >
+            <p>
+              Every log line in that async task automatically includes task_id and order_id — no manual passing needed.
+            </p>
+          </div>
+        </div>
+
+        <h3>Prompt Registry</h3>
+        <p>
+          Agent system prompts are versioned in the <code>prompt_registry</code> PostgreSQL table. The
+          <code>PromptRegistry</code> singleton loads active prompts at startup and auto-refreshes every 5 minutes.
+          Prompt files (<code>prompts/*.md</code>) are the source of truth; the registry provides A/B versioning and
+          runtime hot-swap via API.
+        </p>
+      </section>
+
+      <!-- ── SECURITY & GUARDS ── -->
+      <section id="security">
+        <h2>Guardrails-AI Module &amp; Input/Output Protection</h2>
+        <p style="color: var(--muted); margin-bottom: 24px">
+          Four layers of protection ensure safe LLM interactions: input sanitization, PII masking, guardrails-ai
+          validation, and output parsing. All guards are traced to LangSmith via OpenTelemetry spans.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-red">
+            <h3>🛡️ Prompt Injection Guard</h3>
+            <p><strong>File:</strong> <code>guardrails/input_sanitizer.py</code></p>
+            <p>Defense-in-depth strategy with 4 layers:</p>
+            <ol style="margin-top: 8px; padding-left: 18px; color: var(--muted)">
+              <li>
+                <strong>Character filtering</strong> — strips control chars (0x00–0x1F) and Unicode direction overrides
+                (U+200B–U+206F)
+              </li>
+              <li><strong>Length enforcement</strong> — truncates at 500 chars to prevent token-stuffing</li>
+              <li>
+                <strong>Pattern detection</strong> — 18 regex patterns catching known injection signatures (e.g.,
+                "ignore previous instructions", "system prompt:", "[INST]")
+              </li>
+              <li>
+                <strong>Delimiter wrapping</strong> — wraps user text in
+                <code>&lt;&lt;&lt;USER_INPUT&gt;&gt;&gt;...&lt;&lt;&lt;END_USER_INPUT&gt;&gt;&gt;</code> so the LLM
+                treats it as data, not instructions
+              </li>
+            </ol>
+            <p style="margin-top: 12px"><strong>Two modes:</strong></p>
+            <ul style="padding-left: 18px; color: var(--muted)">
+              <li>
+                <code>raise_on_injection=True</code> (API layer) — rejects the request with a 200 + error response
+              </li>
+              <li>
+                <code>raise_on_injection=False</code> (workflow layer) — neutralizes keywords in-place (e.g., "ignore" →
+                "[ignore]") and continues
+              </li>
+            </ul>
+          </div>
+
+          <div class="card accent-purple">
+            <h3>🔒 PII Masking</h3>
+            <p><strong>File:</strong> <code>guardrails/pii_handler.py</code></p>
+            <p>Detects and masks 5 PII types before data flows through LLM prompts:</p>
+            <table style="margin-top: 8px; width: 100%; font-size: 0.85rem">
+              <tr>
+                <th style="text-align: left; color: var(--muted)">Type</th>
+                <th style="text-align: left; color: var(--muted)">Example</th>
+                <th style="text-align: left; color: var(--muted)">Masked As</th>
+              </tr>
+              <tr>
+                <td>Email</td>
+                <td>john@example.com</td>
+                <td>j***@example.com</td>
+              </tr>
+              <tr>
+                <td>Phone</td>
+                <td>(555) 123-4567</td>
+                <td>[PHONE_REDACTED]</td>
+              </tr>
+              <tr>
+                <td>Credit Card</td>
+                <td>4111-1111-1111-1111</td>
+                <td>[CC_REDACTED]</td>
+              </tr>
+              <tr>
+                <td>SSN</td>
+                <td>123-45-6789</td>
+                <td>[SSN_REDACTED]</td>
+              </tr>
+              <tr>
+                <td>IP Address</td>
+                <td>192.168.1.1</td>
+                <td>[IP_REDACTED]</td>
+              </tr>
+            </table>
+            <p style="margin-top: 12px"><strong>Two APIs:</strong></p>
+            <ul style="padding-left: 18px; color: var(--muted)">
+              <li><code>mask_pii(text)</code> — irreversible, for LLM-bound data</li>
+              <li>
+                <code>PIIMasker()</code> class — reversible with <code>.mask()</code> / <code>.unmask()</code> for
+                internal logging
+              </li>
+            </ul>
+          </div>
+
+          <div class="card accent-yellow">
+            <h3>🔰 Guardrails-AI Validators</h3>
+            <p><strong>File:</strong> <code>guardrails/validators.py</code> + <code>guardrails/runner.py</code></p>
+            <p>Custom validators registered with the guardrails-ai library:</p>
+            <ul style="margin-top: 8px; padding-left: 18px; color: var(--muted)">
+              <li><strong>RefundReasonValidator</strong> — min/max length, gibberish detection</li>
+              <li><strong>PolicyDecisionValidator</strong> — enforces approved/denied/partial enum</li>
+              <li><strong>RefundAmountValidator</strong> — non-negative, within max allowed ($10,000)</li>
+            </ul>
+            <p style="margin-top: 12px"><strong>RefundGuardRunner</strong> orchestrates all guards:</p>
+            <ul style="padding-left: 18px; color: var(--muted)">
+              <li><code>validate_input()</code> — schema validation + PII masking (pre-workflow)</li>
+              <li><code>validate_policy_output()</code> — business rule checks (post-workflow)</li>
+              <li>All validation traced to LangSmith via OpenTelemetry spans</li>
+            </ul>
+          </div>
+
+          <div class="card accent-green">
+            <h3>📋 Output Parser</h3>
+            <p><strong>File:</strong> <code>agents/output_parser.py</code></p>
+            <p>Multi-strategy JSON extraction replaces fragile <code>split("```json")</code> logic:</p>
+            <ol style="margin-top: 8px; padding-left: 18px; color: var(--muted)">
+              <li><strong>Direct JSON</strong> — try <code>json.loads()</code> on entire response</li>
+              <li><strong>Fenced extraction</strong> — regex for <code>```json...```</code> blocks</li>
+              <li>
+                <strong>Brace matching</strong> — character-by-character depth tracking to find first complete
+                <code>{...}</code>
+              </li>
+              <li>
+                <strong>Pydantic validation</strong> — validate against typed models (<code>ValidationOutput</code>,
+                <code>PolicyOutput</code>, <code>CommunicationOutput</code>)
+              </li>
+            </ol>
+            <p style="margin-top: 12px"><strong>Pydantic Models</strong> (<code>agents/output_models.py</code>):</p>
+            <ul style="padding-left: 18px; color: var(--muted)">
+              <li><code>ValidationOutput</code> — 14 fields with type coercion (risk_score clamped 0.0–1.0)</li>
+              <li><code>PolicyOutput</code> — decision enum, refund_amount ≥ 0, count constraints</li>
+              <li><code>CommunicationOutput</code> — boolean flags + confirmation message</li>
+            </ul>
+          </div>
+
+          <div class="card accent-cyan">
+            <h3>🔄 Integration Flow</h3>
+            <p>Guards are applied at multiple layers, all traced to LangSmith:</p>
+            <pre
+              style="
+                margin-top: 8px;
+                font-size: 0.78rem;
+                background: var(--bg);
+                padding: 12px;
+                border-radius: 6px;
+                overflow-x: auto;
+              "><code>API Layer (main.py):
+  POST /refund → sanitize_input(raise=True) → reject or proceed
+
+Pre-Workflow (main.py):
+  RefundGuardRunner.validate_input() → schema + PII masking
+    → traced to LangSmith as "guardrails.validate_input" span
+
+Workflow Layer (graph.py):
+  run_workflow() → sanitize_input(reason) + mask_pii(email)
+    → stored in state as safe_reason
+
+Agent Layer (policy_agent.py):
+  Build user_message → sanitize_input(reason) + mask_pii(reason)
+    → LLM gets delimited, PII-free text
+
+Post-Workflow (main.py):
+  RefundGuardRunner.validate_policy_output() → business rules
+    → traced to LangSmith as "guardrails.validate_policy_output" span
+
+Output Layer (all agents):
+  LLM response → parse_agent_output(text, Model)
+    → validated dict or AgentOutputParseError → HITL/error</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── RAGAS EVALUATION ── -->
+      <section id="evaluation">
+        <h2>RAGAS Evaluation &amp; Quality Metrics</h2>
+        <p style="color: var(--muted); margin-bottom: 24px">
+          Automated quality evaluation using the RAGAS Python library. All metrics run in parallel via
+          <code>asyncio.gather()</code> for maximum throughput. Results are traced to LangSmith.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-teal">
+            <h3>📊 Parallel Evaluation Engine</h3>
+            <p><strong>File:</strong> <code>evaluation/ragas_evaluator.py</code></p>
+            <p>RAGAS metrics evaluated concurrently:</p>
+            <table style="margin-top: 8px; width: 100%; font-size: 0.85rem">
+              <tr>
+                <th style="text-align: left; color: var(--muted)">Metric</th>
+                <th style="text-align: left; color: var(--muted)">Measures</th>
+              </tr>
+              <tr>
+                <td>Faithfulness</td>
+                <td>Does the agent output stay faithful to retrieved context?</td>
+              </tr>
+              <tr>
+                <td>Answer Relevancy</td>
+                <td>Is the refund decision relevant to the customer's request?</td>
+              </tr>
+              <tr>
+                <td>Context Precision</td>
+                <td>Were retrieved policies precisely relevant?</td>
+              </tr>
+              <tr>
+                <td>Context Recall</td>
+                <td>Did we retrieve all necessary policies? (requires ground truth)</td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="card accent-cyan">
+            <h3>⚡ Parallel Architecture</h3>
+            <p>Each metric runs as an independent <code>asyncio</code> task:</p>
+            <pre
+              style="
+                margin-top: 8px;
+                font-size: 0.78rem;
+                background: var(--bg);
+                padding: 12px;
+                border-radius: 6px;
+                overflow-x: auto;
+              "><code>tasks = [
+  _evaluate_metric(faithfulness, sample),
+  _evaluate_metric(answer_relevancy, sample),
+  _evaluate_metric(context_precision, sample),
+  _evaluate_metric(context_recall, sample),
+]
+results = await asyncio.gather(*tasks)</code></pre>
+            <p style="margin-top: 12px"><strong>LangSmith Visibility:</strong></p>
+            <ul style="padding-left: 18px; color: var(--muted)">
+              <li>Each metric traced as OTEL span with score attributes</li>
+              <li>Overall score = mean of all valid metric scores</li>
+              <li>Duration per metric tracked for performance monitoring</li>
+              <li><code>POST /evaluate</code> endpoint for on-demand evaluation</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── RESILIENCE ── -->
+      <section id="resilience">
+        <h2>Resilience: Circuit Breaker, Retry Budget &amp; Model Fallback</h2>
+        <p style="color: var(--muted); margin-bottom: 24px">
+          Production-grade failure handling in <code>executor/resilience.py</code>. Prevents cascading failures
+          and enables automatic LLM provider failover with budget-limited retries.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-red">
+            <h3>🔌 Circuit Breaker</h3>
+            <p><strong>Pattern:</strong> Fail-fast when provider is down</p>
+            <table style="margin-top: 8px; width: 100%; font-size: 0.85rem">
+              <tr>
+                <th style="text-align: left; color: var(--muted)">State</th>
+                <th style="text-align: left; color: var(--muted)">Behaviour</th>
+              </tr>
+              <tr><td>CLOSED</td><td>Normal operation; count consecutive failures</td></tr>
+              <tr><td>OPEN</td><td>All calls rejected immediately (30s cooldown)</td></tr>
+              <tr><td>HALF_OPEN</td><td>One test call; success → CLOSED, failure → OPEN</td></tr>
+            </table>
+            <p style="margin-top: 8px; color: var(--muted); font-size: 0.85rem">
+              Config: 5 failures to trip, 30s recovery, 2 successes to close.
+              Each model has its own independent circuit breaker.
+            </p>
+          </div>
+
+          <div class="card accent-yellow">
+            <h3>💰 Retry Budget</h3>
+            <p><strong>Pattern:</strong> Token-bucket retry limiter</p>
+            <ul style="padding-left: 18px; color: var(--muted); font-size: 0.85rem">
+              <li>Max 20 retries per 60-second rolling window</li>
+              <li>Retry ratio cap: retries ≤ 10% of total requests</li>
+              <li>Exponential backoff: <code>base * 2^attempt * jitter</code></li>
+              <li>Budget exhaustion → <code>RetryBudgetExhausted</code> exception</li>
+            </ul>
+            <p style="margin-top: 8px; color: var(--muted); font-size: 0.85rem">
+              Prevents thundering herd during outages — system degrades gracefully.
+            </p>
+          </div>
+
+          <div class="card accent-blue">
+            <h3>🔄 Model Fallback Chain</h3>
+            <p><strong>Pattern:</strong> Automatic failover between LLMs</p>
+            <pre style="margin-top: 8px; font-size: 0.78rem; background: var(--bg); padding: 12px; border-radius: 6px; overflow-x: auto"><code>Primary: llama-3.1-8b-instant
+  ↓ circuit open / error
+Fallback Fast: llama-3.1-8b-instant (alt endpoint)
+  ↓ circuit open / error
+Fallback Large: llama-3.3-70b-versatile</code></pre>
+            <p style="margin-top: 12px"><strong>LangSmith Visibility:</strong></p>
+            <ul style="padding-left: 18px; color: var(--muted); font-size: 0.85rem">
+              <li><code>fallback.model_used</code> — which model actually served the request</li>
+              <li><code>fallback.attempt</code> — how many models were tried</li>
+              <li><code>GET /resilience/health</code> — real-time circuit states</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── A/B TESTING ── -->
+      <section id="abtesting">
+        <h2>A/B Testing for Prompts</h2>
+        <p style="color: var(--muted); margin-bottom: 24px">
+          Experiment-driven prompt optimization in <code>evaluation/ab_testing.py</code>. Run controlled
+          experiments with statistical significance testing to find the best prompt variants.
+        </p>
+
+        <div class="card-grid">
+          <div class="card accent-purple">
+            <h3>🧪 Experiment Framework</h3>
+            <p><strong>File:</strong> <code>evaluation/ab_testing.py</code></p>
+            <table style="margin-top: 8px; width: 100%; font-size: 0.85rem">
+              <tr>
+                <th style="text-align: left; color: var(--muted)">Feature</th>
+                <th style="text-align: left; color: var(--muted)">Implementation</th>
+              </tr>
+              <tr><td>Assignment</td><td>Deterministic SHA-256 hashing (retry-safe)</td></tr>
+              <tr><td>Traffic Split</td><td>Configurable per-variant percentage</td></tr>
+              <tr><td>Statistics</td><td>Welch's t-test (unequal variance)</td></tr>
+              <tr><td>Confidence</td><td>95% CI per variant + p-value</td></tr>
+              <tr><td>Min Samples</td><td>Configurable threshold before declaring winner</td></tr>
+            </table>
+          </div>
+
+          <div class="card accent-teal">
+            <h3>📈 Statistical Analysis</h3>
+            <p>Winner is declared when:</p>
+            <ol style="padding-left: 18px; color: var(--muted); font-size: 0.85rem">
+              <li>Both variants have ≥ <code>min_samples_per_variant</code> results</li>
+              <li>Welch's t-test p-value &lt; 0.05</li>
+              <li>Variant with higher mean score is winner</li>
+            </ol>
+            <p style="margin-top: 12px"><strong>API Endpoints:</strong></p>
+            <ul style="padding-left: 18px; color: var(--muted); font-size: 0.85rem">
+              <li><code>POST /experiments</code> — Create experiment</li>
+              <li><code>GET /experiments</code> — List all</li>
+              <li><code>GET /experiments/{id}/report</code> — Stats + winner</li>
+              <li><code>POST /experiments/{id}/stop</code> — End experiment</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── DESIGN PATTERNS ── -->
+      <section id="patterns">
+        <h2>Key Design Patterns &amp; Decisions</h2>
+        <div class="card-grid">
+          <div class="card accent-blue">
+            <h3>🔀 Supervisor Pattern (not pipeline)</h3>
+            <p>
+              Rather than a fixed pipeline (validation → policy → communication), a supervisor LLM decides the route.
+              This allows the flow to adapt: if validation fails, supervisor directly ends without running policy or
+              communication.
+            </p>
+          </div>
+          <div class="card accent-green">
+            <h3>⚡ Parallel Wave ReAct</h3>
+            <p>
+              Standard ReAct runs tools one at a time. Our topological wave sort groups independent tools and runs each
+              wave with <code>asyncio.gather()</code>. For the policy agent, this runs 7 tools simultaneously instead of
+              7 sequential round-trips to the LLM.
+            </p>
+          </div>
+          <div class="card accent-yellow">
+            <h3>🛡️ Best-Effort Writes</h3>
+            <p>
+              Checkpoint saves, audit logs, and telemetry spans are all wrapped in try/except. A failure to save a
+              checkpoint logs a warning but never raises — the workflow continues. Correctness trumps observability.
+            </p>
+          </div>
+          <div class="card accent-teal">
+            <h3>🔒 SAVEPOINT Dedup in Communication</h3>
+            <p>
+              <code>save_processed_request</code> uses PostgreSQL SAVEPOINTs to handle race conditions. The outer
+              transaction stays alive even if an inner INSERT fails with IntegrityError on the unique constraint.
+            </p>
+          </div>
+          <div class="card accent-purple">
+            <h3>📍 DB-First Idempotency</h3>
+            <p>
+              IdempotencyRecord is written to PostgreSQL <em>before</em> Redis cache. This ensures that even if the
+              process crashes between the DB write and the Redis write, the DB record prevents duplicate processing on
+              recovery.
+            </p>
+          </div>
+          <div class="card accent-red">
+            <h3>🚫 No request_saved on Failure</h3>
+            <p>
+              The communication agent deliberately does NOT set <code>request_saved=True</code> on DB failure. This is
+              critical: it routes to HITL rather than telling the supervisor the workflow is done when data wasn't
+              persisted.
+            </p>
+          </div>
+          <div class="card accent-orange">
+            <h3>📤 Async Background Tasks</h3>
+            <p>
+              FastAPI's <code>BackgroundTasks</code> runs <code>_process_refund</code> after the HTTP response is sent.
+              The client receives a task_id immediately and polls for results. This prevents HTTP timeout for
+              long-running AI workflows.
+            </p>
+          </div>
+          <div class="card accent-pink">
+            <h3>♻️ State-Driven Recovery</h3>
+            <p>
+              On crash recovery, the system injects the last saved state as the <em>initial state</em>. The supervisor
+              LLM naturally routes to the next incomplete agent because the state fields for already-completed agents
+              are already set. No special recovery logic needed.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Q&A ── -->
+      <section id="qa">
+        <h2>Interview Q&amp;A</h2>
+        <p style="color: var(--muted); margin-bottom: 24px">Click each question to expand the answer.</p>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">Why LangGraph instead of a simple Python pipeline?</div>
+          <div class="qa-a">
+            <p>
+              LangGraph provides a stateful directed graph with built-in checkpointing, conditional routing, and the
+              ability to resume from any node after a crash. A simple pipeline would require manual state management,
+              crash recovery, and retry logic. LangGraph's <code>StateGraph</code> lets us define the workflow
+              declaratively while the framework handles state merging, cycle detection, and persistence via the
+              checkpointer. The supervisor pattern also allows the routing logic to be entirely LLM-driven — we don't
+              hardcode which agent runs after which.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">How does the system handle duplicate refund requests?</div>
+          <div class="qa-a">
+            <p>
+              Two layers of idempotency. First, Redis is checked as a sub-millisecond fast path using an idempotency key
+              (either client-supplied or sha256-derived from the request payload). If Redis misses (e.g., after a Redis
+              restart), we fall back to a PostgreSQL <code>IdempotencyRecord</code> table. If both miss, it's a new
+              request. Race conditions between two simultaneous identical requests are handled by catching the
+              <code>IntegrityError</code> from the unique constraint and returning the winner's task_id. The DB is
+              written first (before Redis) to ensure durability even if the process crashes between the two writes.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">What happens if the server crashes mid-workflow?</div>
+          <div class="qa-a">
+            <p>
+              The Redis task queue persists every in-progress task. On <code>startup()</code>, we call
+              <code>get_incomplete_tasks()</code> which reads the <code>refund:tasks:pending</code> set from Redis. For
+              each task (excluding HITL-pending ones which need human input), we call <code>_recover_task()</code>. This
+              invokes <code>run_workflow()</code> with the same <code>thread_id</code>. Inside, we call
+              <code>load_checkpoint()</code> which tries Redis first, then PostgreSQL. The recovered state is injected
+              as the initial state. The supervisor LLM sees the already-set fields and routes directly to the first
+              incomplete agent — no work is repeated.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">What is the ReAct pattern and how is it used here?</div>
+          <div class="qa-a">
+            <p>
+              ReAct (Reason + Act) is a prompting pattern where the LLM alternates between reasoning about what to do
+              and acting by calling tools. In our system, each agent runs a ReAct loop: the LLM is given a system prompt
+              and user message, it calls tools, sees the results, reasons again, and eventually produces a structured
+              JSON answer (no more tool calls). The key innovation here is <strong>parallel wave execution</strong>:
+              instead of calling tools one at a time (standard ReAct), we group independent tools by dependency and run
+              each group simultaneously with <code>asyncio.gather()</code>. This cuts latency significantly — the policy
+              agent's 7 independent tools run in one parallel batch.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">When does HITL trigger and what can a human do?</div>
+          <div class="qa-a">
+            <p>
+              HITL triggers in five scenarios: (1) supervisor cycle count exceeds 15, (2) any agent exceeds 3 retries,
+              (3) supervisor LLM throws an exception, (4) any agent hits ReAct max iterations (8 tool-calling loops
+              without convergence), (5) communication agent's DB writes fail. The <code>hitl_node</code> saves the full
+              state to the <code>hitl_tasks</code> table and ends the workflow. A human can then:
+              <strong>approve</strong> (reset counters, delete stale LangGraph checkpoint, re-run workflow),
+              <strong>deny</strong> (write denied result directly), or <strong>compensate</strong> (write compensated
+              result with refund_amount=0 — used when the error itself warrants manual handling).
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">
+            How do you ensure the communication agent doesn't double-write on retry?
+          </div>
+          <div class="qa-a">
+            <p>
+              Three levels of idempotency in the communication agent: (1) <code>save_processed_request</code> has a
+              PostgreSQL <code>SAVEPOINT</code> pattern — it checks for an existing record first, and if an
+              IntegrityError occurs on the unique <code>refund_request_id</code> constraint during a race, it rolls back
+              only the savepoint (not the outer transaction) and reads the winner. (2)
+              <code>update_customer_analytics</code> checks the <code>analytics_updated</code> flag on the
+              <code>ProcessedRequest</code> row before recalculating — if already updated for this
+              <code>refund_request_id</code>, it skips. (3) All four communication tools run inside a single LangGraph
+              ReAct loop pass, and the supervisor won't re-route to communication once <code>request_saved=True</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">Why are there two checkpoint systems (custom + LangGraph)?</div>
+          <div class="qa-a">
+            <p>
+              They serve different purposes. The
+              <strong>custom checkpoint store</strong> (<code>checkpoint/store.py</code>) is an explicit agent-level
+              snapshot of the RefundState dict, saved after each agent completes. It's used for our custom crash
+              recovery logic — we control exactly what's saved and when. The
+              <strong>LangGraph AsyncPostgresSaver</strong> is LangGraph's internal mechanism that stores full graph
+              execution snapshots (including message history) and allows graph-level resume by <code>thread_id</code>.
+              When HITL approve re-runs the workflow, we explicitly delete the LangGraph internal checkpoint (because it
+              contains the old cycle count and hitl_required=True) and inject our own recovered state — giving us full
+              control over the resume state.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">How does the policy agent use vector search?</div>
+          <div class="qa-a">
+            <p>
+              The <code>search_policies</code> tool embeds the query using HuggingFace
+              <code>all-MiniLM-L6-v2</code> (384 dimensions), then queries a Pinecone serverless index
+              (<code>warehouse-refund-policies</code>) using cosine similarity to find the top 3 most relevant warehouse
+              policy documents. Before embedding, it checks a Redis semantic cache — if the query (or a similar one) was
+              recently made, it returns cached results. This avoids unnecessary Pinecone API calls and re-embedding the
+              same query. At startup, 8 policy documents are upserted into Pinecone covering general, electronics,
+              furniture, tier-specific, fraud, and eligibility policies.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">
+            How is the supervisor's routing implemented — is it hardcoded?
+          </div>
+          <div class="qa-a">
+            <p>
+              No, it's LLM-driven. The supervisor uses
+              <code>llm.bind_tools(ROUTING_TOOLS, tool_choice="any")</code> which forces the Groq LLM to always call
+              exactly one of the four routing tools (<code>call_validation_agent</code>, <code>call_policy_agent</code>,
+              <code>call_communication_agent</code>, <code>finish_workflow</code>). The LLM receives the current state
+              summary and the tool descriptions (which encode the routing rules) and decides which to call. This means
+              the routing logic lives in the prompt and tool descriptions — not in Python conditionals. Safety guards
+              (cycle cap, retry cap, hitl_required pass-through) are applied in Python <em>before</em> the LLM call so
+              they can't be bypassed.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">
+            How do you prevent the GET /refund endpoint from returning stale data?
+          </div>
+          <div class="qa-a">
+            <p>
+              The 3-layer storage design handles this. Redis (Layer 1) is the hot cache with a 1h TTL for completed
+              results. When Redis expires, the TaskResult PostgreSQL table (Layer 2) serves as the permanent record —
+              it's written by <code>_persist_task_result()</code> immediately after every workflow completion, so it's
+              always available. The IdempotencyRecord (Layer 3) provides a status-only fallback even if TaskResult
+              hasn't been written yet. This ensures results are always available even after Redis TTL expiry, server
+              restarts, or partial write failures.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">Describe the database schema and key tables.</div>
+          <div class="qa-a">
+            <ul>
+              <li>
+                <strong>customers</strong> — name, email, tier (gold/silver/bronze), account_status, total_orders,
+                total_refunds
+              </li>
+              <li><strong>products</strong> — name, category, price, return_window_days, restocking_fee_pct</li>
+              <li><strong>orders</strong> — FK to customer + product, purchase_date, amount, status, payment_method</li>
+              <li>
+                <strong>refund_requests</strong> — FK to order + customer, reason, status (pending→approved/denied)
+              </li>
+              <li>
+                <strong>processed_requests</strong> — final decision record with unique constraint on refund_request_id;
+                has analytics_updated flag for idempotency
+              </li>
+              <li>
+                <strong>customer_analytics</strong> — risk_score, refund_rate, total_spent (recalculated per request)
+              </li>
+              <li>
+                <strong>audit_logs</strong> — per-tool-call log: agent_name, tool, input/output JSON, status,
+                duration_ms
+              </li>
+              <li>
+                <strong>prompt_registry</strong> — versioned prompt storage with is_active flag; unique(name, version)
+              </li>
+              <li><strong>idempotency_records</strong> — dedup table; unique(idempotency_key)</li>
+              <li><strong>task_results</strong> — permanent outcome store; unique(task_id)</li>
+              <li><strong>hitl_tasks</strong> — pending human review tasks with full state_json snapshot</li>
+              <li><strong>workflow_checkpoints</strong> — custom agent-level checkpoints; unique(thread_id)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">How would you scale this system?</div>
+          <div class="qa-a">
+            <ul>
+              <li>
+                <strong>Multiple API workers:</strong> FastAPI with multiple Uvicorn workers; Redis and PostgreSQL are
+                shared state so workers coordinate naturally via the task queue
+              </li>
+              <li>
+                <strong>Dedicated worker processes:</strong> Move <code>_process_refund</code> to a Celery or ARQ worker
+                pool; API layer only handles HTTP and task enqueuing
+              </li>
+              <li>
+                <strong>LLM concurrency:</strong> Each task uses its own LLM instances; Groq's rate limits are the
+                current bottleneck — a queue depth limit or token bucket would be added
+              </li>
+              <li>
+                <strong>Read replicas:</strong> Customer/order lookups (read-heavy) could be routed to PostgreSQL read
+                replicas
+              </li>
+              <li><strong>Pinecone auto-scales:</strong> Serverless index handles variable load automatically</li>
+              <li><strong>Redis Cluster:</strong> For high throughput, shard the queue hash across Redis nodes</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">How do you prevent prompt injection attacks?</div>
+          <div class="qa-a">
+            <p>
+              Defense-in-depth with four layers. First, we strip control characters and Unicode direction overrides that
+              could manipulate text rendering. Second, we enforce a 500-character limit to prevent token-stuffing.
+              Third, we run 18 regex patterns detecting known injection signatures like "ignore previous instructions",
+              "system prompt:", "[INST]", "act as", etc. Fourth, we wrap surviving user text in
+              <code>&lt;&lt;&lt;USER_INPUT&gt;&gt;&gt;...&lt;&lt;&lt;END_USER_INPUT&gt;&gt;&gt;</code> delimiters so the
+              LLM treats it as data rather than instructions. At the API layer, detection raises immediately (reject the
+              request). Inside the workflow, we neutralize keywords in-place (e.g., "ignore" → "[ignore]") and continue
+              processing.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">How is PII handled before sending data to the LLM?</div>
+          <div class="qa-a">
+            <p>
+              We use regex-based PII detection covering emails, phone numbers, credit cards, SSNs, and IP addresses. Two
+              masking modes exist: <strong>irreversible</strong> (<code>mask_pii()</code>) for LLM-bound data where we
+              never need the original back, and <strong>reversible</strong> (<code>PIIMasker</code> class) that
+              maintains a token→original lookup table for internal logging where we might need to correlate back. Emails
+              are partially masked (preserving domain for debugging), while other PII types are fully redacted. The
+              masking runs at the workflow entry point (graph.py) and again at the policy agent level where
+              refund_reason is directly included in the LLM prompt.
+            </p>
+          </div>
+        </div>
+
+        <div class="qa">
+          <div class="qa-q" onclick="toggleQA(this)">
+            Why use a multi-strategy output parser instead of LangChain's built-in?
+          </div>
+          <div class="qa-a">
+            <p>
+              Our agents use tool-calling LLMs (Groq/Llama) in a ReAct loop, so the final "answer" comes as free-text
+              after tool execution — not as a structured tool call. LangChain's <code>JsonOutputParser</code> expects a
+              specific prompt format that doesn't fit our ReAct pattern. Our parser tries three strategies in order: (1)
+              direct <code>json.loads()</code> on the full response, (2) regex extraction from
+              <code>```json</code> fences, (3) character-by-character brace-depth matching to find the first complete
+              JSON object. After extraction, we validate with Pydantic models (typed fields, ranges, required keys).
+              This handles the variety of LLM output formats without depending on the model always following a specific
+              format perfectly. On failure, we raise <code>AgentOutputParseError</code> which routes to HITL or error
+              handling rather than crashing silently.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <button class="back-top" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })" title="Back to top">↑</button>
+
+    <script>
+      function toggleQA(el) {
+        const answer = el.nextElementSibling;
+        const isOpen = answer.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.qa-a').forEach((a) => a.classList.remove('open'));
+        document.querySelectorAll('.qa-q').forEach((q) => q.classList.remove('active'));
+        // Open clicked (if it was closed)
+        if (!isOpen) {
+          answer.classList.add('open');
+          el.classList.add('active');
+        }
+      }
+    </script>
+  </body>
+</html>
